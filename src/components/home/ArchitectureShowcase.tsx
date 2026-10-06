@@ -1,9 +1,42 @@
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
-import { INDIAN_DESIGN_STYLES } from "@/lib/constants";
+import { INDIAN_DESIGN_STYLES, type DesignStyle } from "@/lib/constants";
+import { fetchProjectTypesFromFirestore } from "@/lib/firebase";
 import { ArrowRight } from "lucide-react";
 import { ArchitecturalImage } from "@/components/ui/architectural-image";
 
 export function ArchitectureShowcase() {
+  const [styles, setStyles] = React.useState<DesignStyle[]>(INDIAN_DESIGN_STYLES);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetchProjectTypesFromFirestore()
+      .then((custom) => {
+        if (!isMounted || !custom || custom.length === 0) return;
+        const mappedCustom: DesignStyle[] = custom.map((c) => ({
+          id: c.id || c.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          title: c.title,
+          tagline: c.tagline || "Custom Architectural Style",
+          description:
+            c.description ||
+            "Bespoke residential style crafted for local climate, honest materials, and family traditions.",
+          keyElements:
+            c.keyElements && c.keyElements.length > 0
+              ? c.keyElements
+              : ["Vernacular Design", "Natural Stone", "Custom Courtyard"],
+          imageUrl: c.imageUrl || "/images/architecture/traditional-heritage.jpg",
+        }));
+        setStyles([...mappedCustom, ...INDIAN_DESIGN_STYLES]);
+      })
+      .catch(console.warn);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className="py-24 lg:py-36 bg-background">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
@@ -23,7 +56,7 @@ export function ArchitectureShowcase() {
 
         {/* Editorial Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-          {INDIAN_DESIGN_STYLES.map((style) => (
+          {styles.map((style) => (
             <div
               key={style.id}
               className="group flex flex-col justify-between rounded-md overflow-hidden border border-border bg-card hover:border-primary/50 transition-all duration-300 shadow-xs"

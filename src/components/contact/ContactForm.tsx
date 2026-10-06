@@ -18,6 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Send, CheckCircle2, Loader2, MessageSquare, Phone } from "lucide-react";
+import {
+  fetchProjectTypesFromFirestore,
+  fetchBudgetRangesFromFirestore,
+} from "@/lib/firebase";
 
 function buildWhatsAppUrl(data: ContactFormData): string {
   const whatsappNumber = BRAND.whatsappNumber.replace(/[^0-9]/g, "");
@@ -43,6 +47,37 @@ export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [submittedData, setSubmittedData] = React.useState<ContactFormData | null>(null);
+
+  const [projectTypes, setProjectTypes] = React.useState<string[]>(PROJECT_TYPES);
+  const [budgetRanges, setBudgetRanges] = React.useState<string[]>(BUDGET_RANGES);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      fetchProjectTypesFromFirestore(),
+      fetchBudgetRangesFromFirestore(),
+    ])
+      .then(([customTypes, customBudgets]) => {
+        if (!isMounted) return;
+        if (customTypes && customTypes.length > 0) {
+          const names = customTypes.map((t) => t.title);
+          const merged = Array.from(new Set([...names, ...PROJECT_TYPES]));
+          setProjectTypes(merged);
+        }
+        if (customBudgets && customBudgets.length > 0) {
+          const ranges = customBudgets.map((b) => b.range);
+          const merged = Array.from(new Set([...ranges, ...BUDGET_RANGES]));
+          setBudgetRanges(merged);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load dynamic types/budgets in ContactForm:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const {
     register,
@@ -270,7 +305,7 @@ export function ContactForm() {
               <SelectValue placeholder="Select Project Type" />
             </SelectTrigger>
             <SelectContent>
-              {PROJECT_TYPES.map((type) => (
+              {projectTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
                 </SelectItem>
@@ -287,7 +322,7 @@ export function ContactForm() {
               <SelectValue placeholder="Select Budget Range" />
             </SelectTrigger>
             <SelectContent>
-              {BUDGET_RANGES.map((b) => (
+              {budgetRanges.map((b) => (
                 <SelectItem key={b} value={b}>
                   {b}
                 </SelectItem>

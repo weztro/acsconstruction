@@ -315,3 +315,170 @@ export async function fetchSiteVisitsFromFirestore(
     return [];
   }
 }
+
+// ----------------------------------------------------
+// Dynamic Project Types Services
+// ----------------------------------------------------
+
+export interface DynamicProjectType {
+  id?: string;
+  title: string;
+  tagline?: string;
+  description?: string;
+  imageUrl?: string;
+  keyElements?: string[];
+  createdAt?: unknown;
+}
+
+export async function fetchProjectTypesFromFirestore(): Promise<DynamicProjectType[]> {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, "project_types"), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as DynamicProjectType[];
+  } catch (error) {
+    console.error("Error fetching project types from Firestore:", error);
+    return [];
+  }
+}
+
+export async function saveProjectTypeToFirestore(
+  data: Omit<DynamicProjectType, "id" | "createdAt">
+): Promise<{ success: boolean; id?: string }> {
+  if (!db) return { success: false };
+  try {
+    const docRef = await addDoc(collection(db, "project_types"), {
+      ...data,
+      createdAt: serverTimestamp(),
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error("Error saving project type to Firestore:", error);
+    return { success: false };
+  }
+}
+
+export async function deleteProjectTypeFromFirestore(id: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await deleteDoc(doc(db, "project_types", id));
+    return true;
+  } catch (error) {
+    console.error("Error deleting project type:", error);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// Dynamic Estimated Budget Ranges Services
+// ----------------------------------------------------
+
+export interface DynamicBudgetRange {
+  id?: string;
+  range: string;
+  createdAt?: unknown;
+}
+
+export async function fetchBudgetRangesFromFirestore(): Promise<DynamicBudgetRange[]> {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, "budget_ranges"), orderBy("createdAt", "asc"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as DynamicBudgetRange[];
+  } catch (error) {
+    console.error("Error fetching budget ranges from Firestore:", error);
+    return [];
+  }
+}
+
+export async function saveBudgetRangeToFirestore(
+  range: string
+): Promise<{ success: boolean; id?: string }> {
+  if (!db) return { success: false };
+  try {
+    const docRef = await addDoc(collection(db, "budget_ranges"), {
+      range,
+      createdAt: serverTimestamp(),
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error("Error saving budget range to Firestore:", error);
+    return { success: false };
+  }
+}
+
+export async function deleteBudgetRangeFromFirestore(id: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await deleteDoc(doc(db, "budget_ranges", id));
+    return true;
+  } catch (error) {
+    console.error("Error deleting budget range:", error);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// Dynamic Engineers & Mesthris Services
+// ----------------------------------------------------
+
+export interface EngineerMesthri {
+  id?: string;
+  name: string;
+  role: string;
+  experience: string;
+  specialization: string;
+  bio?: string;
+  phone?: string;
+  imageUrl?: string;
+  createdAt?: unknown;
+}
+
+export async function fetchEngineersFromFirestore(): Promise<EngineerMesthri[]> {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, "engineers_mesthri"), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as EngineerMesthri[];
+  } catch (error) {
+    console.error("Error fetching engineers and mesthris from Firestore:", error);
+    return [];
+  }
+}
+
+export async function saveEngineerToFirestore(
+  data: Omit<EngineerMesthri, "id" | "createdAt">
+): Promise<{ success: boolean; id?: string }> {
+  if (!db) return { success: false };
+  try {
+    const docRef = await addDoc(collection(db, "engineers_mesthri"), {
+      ...data,
+      createdAt: serverTimestamp(),
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error("Error saving engineer/mesthri to Firestore:", error);
+    return { success: false };
+  }
+}
+
+export async function deleteEngineerFromFirestore(id: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await deleteDoc(doc(db, "engineers_mesthri", id));
+    return true;
+  } catch (error) {
+    console.error("Error deleting engineer/mesthri:", error);
+    return false;
+  }
+}
+

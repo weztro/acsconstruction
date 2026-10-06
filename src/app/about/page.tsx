@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { TRUST_STATS } from "@/lib/constants";
 import { ArchitecturalImage } from "@/components/ui/architectural-image";
+import { TeamSection } from "@/components/about/TeamSection";
 
 export const metadata: Metadata = {
   title: "About Our Studio & Heritage",
@@ -175,42 +176,8 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Studio Leadership */}
-        <div className="space-y-10">
-          <div className="max-w-2xl space-y-2">
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#B86F55] dark:text-[#B8735B] flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" />
-              <span>Studio Leadership</span>
-            </span>
-            <h2 className="font-serif text-2xl sm:text-3xl font-normal text-foreground">
-              Led by Architects, Engineers & Sthapatis.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {LEADERSHIP.map((lead) => (
-              <div
-                key={lead.name}
-                className="p-7 sm:p-8 bg-card border border-border rounded-md space-y-3.5 shadow-xs"
-              >
-                <div className="w-10 h-10 rounded-md bg-secondary text-primary flex items-center justify-center font-serif text-lg">
-                  {lead.name[3]}
-                </div>
-                <div>
-                  <h3 className="font-serif text-lg font-normal text-foreground">
-                    {lead.name}
-                  </h3>
-                  <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
-                    {lead.role}
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed pt-2 border-t border-border/50">
-                  {lead.bio}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Studio Leadership & Engineers/Mesthris */}
+        <TeamSection />
 
         {/* Bottom Banner */}
         <div className="p-8 sm:p-12 bg-secondary/30 border border-border rounded-md text-center space-y-4 shadow-xs">

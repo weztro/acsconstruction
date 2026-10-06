@@ -12,10 +12,23 @@ import {
   fileToBase64,
   fetchSiteVisitsFromFirestore,
   logSiteVisit,
+  fetchProjectTypesFromFirestore,
+  saveProjectTypeToFirestore,
+  deleteProjectTypeFromFirestore,
+  fetchBudgetRangesFromFirestore,
+  saveBudgetRangeToFirestore,
+  deleteBudgetRangeFromFirestore,
+  fetchEngineersFromFirestore,
+  saveEngineerToFirestore,
+  deleteEngineerFromFirestore,
   type Lead,
   type ProjectItem,
   type SiteVisit,
+  type DynamicProjectType,
+  type DynamicBudgetRange,
+  type EngineerMesthri,
 } from "@/lib/firebase";
+import { INDIAN_DESIGN_STYLES, BUDGET_RANGES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,6 +58,12 @@ import {
   RefreshCw,
   BarChart3,
   Sparkles,
+  HardHat,
+  Settings,
+  DollarSign,
+  Palette,
+  Award,
+  Layers,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -84,7 +103,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, logout, isMock } = useAuth();
 
-  const [activeTab, setActiveTab] = React.useState<"leads" | "projects" | "visitors">("leads");
+  const [activeTab, setActiveTab] = React.useState<"leads" | "projects" | "visitors" | "config">("leads");
 
   // Leads State
   const [leads, setLeads] = React.useState<Lead[]>([]);
@@ -100,6 +119,49 @@ export default function AdminDashboardPage() {
   // Site Visitors State
   const [visits, setVisits] = React.useState<SiteVisit[]>([]);
   const [visitsLoading, setVisitsLoading] = React.useState(true);
+
+  // Studio Master Config State (Budgets, Project Types & Mesthris)
+  const [configSubTab, setConfigSubTab] = React.useState<"styles" | "budgets" | "engineers">("styles");
+  const [dynamicProjectTypes, setDynamicProjectTypes] = React.useState<DynamicProjectType[]>([]);
+  const [dynamicBudgets, setDynamicBudgets] = React.useState<DynamicBudgetRange[]>([]);
+  const [dynamicEngineers, setDynamicEngineers] = React.useState<EngineerMesthri[]>([]);
+  const [configLoading, setConfigLoading] = React.useState(false);
+
+  // New Project Type Modal & Form
+  const [isAddTypeModalOpen, setIsAddTypeModalOpen] = React.useState(false);
+  const [newType, setNewType] = React.useState({
+    title: "",
+    tagline: "",
+    description: "",
+    imageUrl: "",
+    keyElements: "Nadumuttam Courtyard, Clay Roof Tiles, Timber Posts",
+  });
+  const [typeImageBase64, setTypeImageBase64] = React.useState("");
+  const [convertingTypeImage, setConvertingTypeImage] = React.useState(false);
+  const [typeImageSize, setTypeImageSize] = React.useState("");
+  const [submittingType, setSubmittingType] = React.useState(false);
+  const typeFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // New Budget Form
+  const [newBudgetInput, setNewBudgetInput] = React.useState("");
+  const [submittingBudget, setSubmittingBudget] = React.useState(false);
+
+  // New Engineer / Mesthri Modal & Form
+  const [isAddEngModalOpen, setIsAddEngModalOpen] = React.useState(false);
+  const [newEngineer, setNewEngineer] = React.useState({
+    name: "",
+    role: "Senior Head Mesthri (Masonry)",
+    experience: "20+ Years in Tenkasi",
+    specialization: "Traditional Brick Bonding, Courtyard Roof Framing",
+    bio: "Generational craftsmanship supervisor ensuring structural perfection.",
+    phone: "+91 94869 43652",
+    imageUrl: "",
+  });
+  const [engImageBase64, setEngImageBase64] = React.useState("");
+  const [convertingEngImage, setConvertingEngImage] = React.useState(false);
+  const [engImageSize, setEngImageSize] = React.useState("");
+  const [submittingEng, setSubmittingEng] = React.useState(false);
+  const engFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // New Project Form State
   const [newProject, setNewProject] = React.useState({
@@ -150,13 +212,199 @@ export default function AdminDashboardPage() {
     setVisitsLoading(false);
   }, []);
 
+  // Load Studio Master Configuration (Types, Budgets, Engineers)
+  const loadConfigData = React.useCallback(async () => {
+    setConfigLoading(true);
+    try {
+      const [types, budgets, engs] = await Promise.all([
+        fetchProjectTypesFromFirestore(),
+        fetchBudgetRangesFromFirestore(),
+        fetchEngineersFromFirestore(),
+      ]);
+      setDynamicProjectTypes(types);
+      setDynamicBudgets(budgets);
+      setDynamicEngineers(engs);
+    } catch (err) {
+      console.warn("Error loading config data:", err);
+    } finally {
+      setConfigLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
     if (user) {
       loadLeads();
       loadProjects();
       loadVisits();
+      loadConfigData();
     }
-  }, [user, loadLeads, loadProjects, loadVisits]);
+  }, [user, loadLeads, loadProjects, loadVisits, loadConfigData]);
+
+  // Handlers for Project Types
+  const handleCreateProjectType = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newType.title.trim()) return;
+    setSubmittingType(true);
+    const elements = newType.keyElements
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const res = await saveProjectTypeToFirestore({
+      title: newType.title.trim(),
+      tagline: newType.tagline.trim() || "Vernacular Architectural Style",
+      description: newType.description.trim(),
+      imageUrl: typeImageBase64 || newType.imageUrl || "/images/architecture/traditional-heritage.jpg",
+      keyElements: elements,
+    });
+    setSubmittingType(false);
+    if (res.success) {
+      setIsAddTypeModalOpen(false);
+      setNewType({
+        title: "",
+        tagline: "",
+        description: "",
+        imageUrl: "",
+        keyElements: "Nadumuttam Courtyard, Clay Roof Tiles, Timber Posts",
+      });
+      setTypeImageBase64("");
+      setTypeImageSize("");
+      if (typeFileInputRef.current) {
+        typeFileInputRef.current.value = "";
+      }
+      loadConfigData();
+    } else {
+      alert("Failed to save architectural style. Check Firestore connection.");
+    }
+  };
+
+  const handleDeleteProjectType = async (id: string) => {
+    if (window.confirm("Remove this custom architectural style?")) {
+      await deleteProjectTypeFromFirestore(id);
+      loadConfigData();
+    }
+  };
+
+  // Handlers for Budgets
+  const handleCreateBudget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBudgetInput.trim()) return;
+    setSubmittingBudget(true);
+    const res = await saveBudgetRangeToFirestore(newBudgetInput.trim());
+    setSubmittingBudget(false);
+    if (res.success) {
+      setNewBudgetInput("");
+      loadConfigData();
+    } else {
+      alert("Failed to save budget range.");
+    }
+  };
+
+  const handleDeleteBudget = async (id: string) => {
+    if (window.confirm("Remove this budget range?")) {
+      await deleteBudgetRangeFromFirestore(id);
+      loadConfigData();
+    }
+  };
+
+  // Handlers for Engineers / Mesthris
+  const handleCreateEngineer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEngineer.name.trim()) return;
+    setSubmittingEng(true);
+    const res = await saveEngineerToFirestore({
+      name: newEngineer.name.trim(),
+      role: newEngineer.role.trim(),
+      experience: newEngineer.experience.trim(),
+      specialization: newEngineer.specialization.trim(),
+      bio: newEngineer.bio.trim(),
+      phone: newEngineer.phone.trim(),
+      imageUrl: engImageBase64 || newEngineer.imageUrl || "",
+    });
+    setSubmittingEng(false);
+    if (res.success) {
+      setIsAddEngModalOpen(false);
+      setNewEngineer({
+        name: "",
+        role: "Senior Head Mesthri (Masonry)",
+        experience: "20+ Years in Tenkasi",
+        specialization: "Traditional Brick Bonding, Courtyard Roof Framing",
+        bio: "Generational craftsmanship supervisor ensuring structural perfection.",
+        phone: "+91 94869 43652",
+        imageUrl: "",
+      });
+      setEngImageBase64("");
+      setEngImageSize("");
+      if (engFileInputRef.current) {
+        engFileInputRef.current.value = "";
+      }
+      loadConfigData();
+    } else {
+      alert("Failed to save engineer / mesthri.");
+    }
+  };
+
+  const handleDeleteEngineer = async (id: string) => {
+    if (window.confirm("Remove this engineer / mesthri?")) {
+      await deleteEngineerFromFirestore(id);
+      loadConfigData();
+    }
+  };
+
+  // Style Image File Handler
+  const handleTypeImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setConvertingTypeImage(true);
+      const b64 = await fileToBase64(file, 1200, 0.82);
+      setTypeImageBase64(b64);
+      const approxKb = Math.round((b64.length * 3) / 4 / 1024);
+      setTypeImageSize(`${approxKb} KB`);
+      setNewType((prev) => ({ ...prev, imageUrl: b64 }));
+    } catch (err) {
+      console.error("Failed to convert style image to Base64:", err);
+      alert("Could not process image file. Please try another image.");
+    } finally {
+      setConvertingTypeImage(false);
+    }
+  };
+
+  const handleClearTypeImage = () => {
+    setTypeImageBase64("");
+    setTypeImageSize("");
+    setNewType((prev) => ({ ...prev, imageUrl: "" }));
+    if (typeFileInputRef.current) {
+      typeFileInputRef.current.value = "";
+    }
+  };
+
+  // Engineer Photo File Handler
+  const handleEngImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setConvertingEngImage(true);
+      const b64 = await fileToBase64(file, 800, 0.82);
+      setEngImageBase64(b64);
+      const approxKb = Math.round((b64.length * 3) / 4 / 1024);
+      setEngImageSize(`${approxKb} KB`);
+      setNewEngineer((prev) => ({ ...prev, imageUrl: b64 }));
+    } catch (err) {
+      console.error("Failed to convert photo to Base64:", err);
+      alert("Could not process photo file.");
+    } finally {
+      setConvertingEngImage(false);
+    }
+  };
+
+  const handleClearEngImage = () => {
+    setEngImageBase64("");
+    setEngImageSize("");
+    setNewEngineer((prev) => ({ ...prev, imageUrl: "" }));
+    if (engFileInputRef.current) {
+      engFileInputRef.current.value = "";
+    }
+  };
 
   // Simulate Sample Visits for testing
   const handleSimulateVisits = async () => {
@@ -538,6 +786,18 @@ export default function AdminDashboardPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("config")}
+            className={`py-3.5 flex items-center gap-2 border-b-2 transition-colors ${
+              activeTab === "config"
+                ? "border-primary text-primary font-semibold"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Settings className="w-4 h-4 text-[#B86F55]" />
+            <span>Studio Config (Styles, Budgets &amp; Mesthris)</span>
           </button>
         </div>
       </div>
@@ -1219,6 +1479,436 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* ==================================================== */}
+        {/* STUDIO CONFIGURATION TAB CONTENT */}
+        {/* ==================================================== */}
+        {activeTab === "config" && (
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-card border border-border rounded-xl shadow-xs">
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B86F55] font-mono">
+                  Master Data &amp; Dynamic Settings
+                </span>
+                <h2 className="font-serif text-xl sm:text-2xl font-normal text-foreground mt-0.5">
+                  Studio Dynamic Configuration
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Configure architectural styles (project types), estimated budget ranges, and engineers/mesthri profiles. Stored in Firebase Firestore and reflected across the live frontend.
+                </p>
+              </div>
+
+              {/* Sub-Tabs Selector */}
+              <div className="flex items-center gap-1.5 p-1 bg-secondary/60 border border-border rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setConfigSubTab("styles")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    configSubTab === "styles"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Palette className="w-3.5 h-3.5 inline mr-1 text-[#B86F55]" />
+                  Project Types ({dynamicProjectTypes.length + INDIAN_DESIGN_STYLES.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConfigSubTab("budgets")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    configSubTab === "budgets"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <DollarSign className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
+                  Budgets ({dynamicBudgets.length + BUDGET_RANGES.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConfigSubTab("engineers")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    configSubTab === "engineers"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <HardHat className="w-3.5 h-3.5 inline mr-1 text-primary" />
+                  Engineers &amp; Mesthris ({dynamicEngineers.length + 3})
+                </button>
+              </div>
+            </div>
+
+            {/* SUBTAB 1: PROJECT TYPES / ARCHITECTURAL STYLES */}
+            {configSubTab === "styles" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif text-lg font-normal text-foreground">
+                      Architectural Styles &amp; Project Types
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Styles shown on the Homepage Aesthetic Heritage section and in the Contact Form enquiry dropdown.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setIsAddTypeModalOpen(true)}
+                    size="sm"
+                    className="text-xs uppercase tracking-wider"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <span>Add Project Type</span>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Dynamic Types from Firestore */}
+                  {dynamicProjectTypes.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-card border border-primary/40 rounded-xl overflow-hidden shadow-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="relative aspect-[16/10] bg-secondary/50 overflow-hidden">
+                          {item.imageUrl ? (
+                            <Image
+                              src={item.imageUrl}
+                              alt={item.title}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                              <ImageIcon className="w-8 h-8 opacity-40" />
+                            </div>
+                          )}
+                          <Badge className="absolute top-3 left-3 text-[10px] bg-primary text-primary-foreground font-mono">
+                            Custom Type (Firestore)
+                          </Badge>
+                        </div>
+
+                        <div className="p-5 space-y-2">
+                          <h4 className="font-serif text-lg font-normal text-foreground">
+                            {item.title}
+                          </h4>
+                          {item.tagline && (
+                            <p className="text-xs text-primary font-medium">{item.tagline}</p>
+                          )}
+                          {item.description && (
+                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                              {item.description}
+                            </p>
+                          )}
+                          {item.keyElements && item.keyElements.length > 0 && (
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {item.keyElements.map((el, i) => (
+                                <span
+                                  key={i}
+                                  className="text-[10px] px-2 py-0.5 bg-secondary text-foreground rounded-sm font-mono"
+                                >
+                                  {el}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="p-4 border-t border-border flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => item.id && handleDeleteProjectType(item.id)}
+                          className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          <span>Remove</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Built-in Default Architectural Styles (Preserved) */}
+                  {INDIAN_DESIGN_STYLES.map((style) => (
+                    <div
+                      key={style.id}
+                      className="bg-card border border-border rounded-xl overflow-hidden shadow-xs flex flex-col justify-between opacity-90"
+                    >
+                      <div>
+                        <div className="relative aspect-[16/10] bg-secondary/50 overflow-hidden">
+                          <Image
+                            src={style.imageUrl}
+                            alt={style.title}
+                            fill
+                            className="object-cover"
+                          />
+                          <span className="absolute top-3 left-3 bg-background/90 px-2 py-0.5 rounded text-[10px] font-mono text-muted-foreground">
+                            Default Standard
+                          </span>
+                        </div>
+
+                        <div className="p-5 space-y-2">
+                          <h4 className="font-serif text-lg font-normal text-foreground">
+                            {style.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {style.description}
+                          </p>
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {style.keyElements.map((el, i) => (
+                              <span
+                                key={i}
+                                className="text-[10px] px-2 py-0.5 bg-secondary/60 text-muted-foreground rounded-sm font-mono"
+                              >
+                                {el}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border-t border-border/60 text-[11px] text-muted-foreground font-mono">
+                        Core Atelier Architectural Style
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 2: ESTIMATED BUDGET RANGES */}
+            {configSubTab === "budgets" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-serif text-lg font-normal text-foreground">
+                    Estimated Budget Brackets
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Budget options selectable by prospective clients in the Contact &amp; Consultation form.
+                  </p>
+                </div>
+
+                {/* Add Budget Input */}
+                <form
+                  onSubmit={handleCreateBudget}
+                  className="p-5 bg-card border border-border rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-xl shadow-xs"
+                >
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. ₹35 Lakhs – ₹60 Lakhs"
+                    value={newBudgetInput}
+                    onChange={(e) => setNewBudgetInput(e.target.value)}
+                    className="flex-1 px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={submittingBudget}
+                    size="sm"
+                    className="text-xs uppercase tracking-wider h-9"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <span>Add Budget Bracket</span>
+                  </Button>
+                </form>
+
+                {/* Budgets List Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Dynamic Firestore Budgets */}
+                  {dynamicBudgets.map((b) => (
+                    <div
+                      key={b.id}
+                      className="p-4 bg-card border border-primary/40 rounded-lg flex items-center justify-between shadow-xs"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <DollarSign className="w-4 h-4 text-emerald-600" />
+                        <span className="text-xs font-semibold text-foreground font-mono">
+                          {b.range}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] text-primary border-primary/30">
+                          Custom
+                        </Badge>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => b.id && handleDeleteBudget(b.id)}
+                        className="text-muted-foreground hover:text-destructive p-1 rounded"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Default Budgets */}
+                  {BUDGET_RANGES.map((range, i) => (
+                    <div
+                      key={i}
+                      className="p-4 bg-card border border-border rounded-lg flex items-center justify-between shadow-xs opacity-90"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <DollarSign className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-xs font-medium text-foreground font-mono">
+                          {range}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-mono">Default</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 3: ENGINEERS & MESTHRIS */}
+            {configSubTab === "engineers" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif text-lg font-normal text-foreground">
+                      Site Engineers, Chief Mesthris &amp; Master Masons
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Site supervisory team, senior civil engineers, and master craftsmen displayed on the About page.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setIsAddEngModalOpen(true)}
+                    size="sm"
+                    className="text-xs uppercase tracking-wider"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <span>Add Engineer / Mesthri</span>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Dynamic Firestore Engineers & Mesthris */}
+                  {dynamicEngineers.map((eng) => (
+                    <div
+                      key={eng.id}
+                      className="p-6 bg-card border border-primary/40 rounded-xl space-y-4 shadow-xs flex flex-col justify-between"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-secondary text-primary flex items-center justify-center font-serif text-lg border border-border">
+                            {eng.imageUrl ? (
+                              <Image
+                                src={eng.imageUrl}
+                                alt={eng.name}
+                                fill
+                                unoptimized
+                                className="object-cover"
+                              />
+                            ) : (
+                              <HardHat className="w-6 h-6 text-primary" />
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
+                            Custom Master
+                          </Badge>
+                        </div>
+
+                        <div>
+                          <h4 className="font-serif text-base font-normal text-foreground">
+                            {eng.name}
+                          </h4>
+                          <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
+                            {eng.role}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                            {eng.experience}
+                          </p>
+                        </div>
+
+                        <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border/50">
+                          <p className="font-medium text-foreground text-[11px]">Specialization:</p>
+                          <p>{eng.specialization}</p>
+                          {eng.phone && <p className="text-[11px] pt-1">Phone: {eng.phone}</p>}
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-border flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => eng.id && handleDeleteEngineer(eng.id)}
+                          className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          <span>Remove</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Core Founding Leadership (Always Displayed) */}
+                  <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-xs opacity-90">
+                    <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-serif text-lg">
+                      K
+                    </div>
+                    <div>
+                      <h4 className="font-serif text-base font-normal text-foreground">
+                        Ar. K. Ramanathan
+                      </h4>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
+                        Principal Architect &amp; Founder
+                      </p>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        30+ Years Experience
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+                      Vernacular thermal physics, traditional Chettinad timber joinery.
+                    </p>
+                  </div>
+
+                  <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-xs opacity-90">
+                    <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-serif text-lg">
+                      R
+                    </div>
+                    <div>
+                      <h4 className="font-serif text-base font-normal text-foreground">
+                        Er. Rajeshwari Menon
+                      </h4>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
+                        Head of Structural Engineering
+                      </p>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        22+ Years Experience
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+                      M.Tech IIT Madras. Seismic foundation safety and concrete curing audits.
+                    </p>
+                  </div>
+
+                  <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-xs opacity-90">
+                    <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-serif text-lg">
+                      M
+                    </div>
+                    <div>
+                      <h4 className="font-serif text-base font-normal text-foreground">
+                        Sthapati V. Murugesan
+                      </h4>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
+                        Master Sthapati &amp; Head Mesthri
+                      </p>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        35+ Years Heritage Mastery
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+                      Generational stone carving, temple masonry, Athangudi tile casting.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ==================================================== */}
@@ -1422,6 +2112,365 @@ export default function AdminDashboardPage() {
                     : submittingProject
                     ? "Saving Project..."
                     : "Publish Project"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* ADD PROJECT TYPE / ARCHITECTURAL STYLE MODAL */}
+      {/* ==================================================== */}
+      {isAddTypeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
+                  Studio Master Architecture
+                </span>
+                <h3 className="font-serif text-xl font-normal text-foreground">
+                  Add Architectural Style / Project Type
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsAddTypeModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-mono"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProjectType} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Style / Project Type Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Kerala Nalukettu Heritage or Modern Vernacular Villa"
+                  value={newType.title}
+                  onChange={(e) => setNewType({ ...newType, title: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Tagline / Subheading</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Sloped Mangalore Clay Roofs & Nadumuttam Courtyards"
+                  value={newType.tagline}
+                  onChange={(e) => setNewType({ ...newType, tagline: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Architectural Narrative / Description</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Explain the vernacular design philosophy, materials used, natural ventilation, and regional aesthetics..."
+                  value={newType.description}
+                  onChange={(e) => setNewType({ ...newType, description: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Key Design Elements (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Nadumuttam Courtyard, Clay Roof Tiles, Teakwood Pillars, Athangudi Tiles"
+                  value={newType.keyElements}
+                  onChange={(e) => setNewType({ ...newType, keyElements: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Style Image Upload via Base64 or URL */}
+              <div className="space-y-3 p-4 bg-secondary/30 rounded-lg border border-border">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span>Style Cover Image (Upload as Base64)</span>
+                  </label>
+                  {typeImageBase64 && (
+                    <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
+                      Base64 Ready • {typeImageSize}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Preview */}
+                {(typeImageBase64 || newType.imageUrl) && (
+                  <div className="relative aspect-[16/9] w-full rounded-md overflow-hidden border border-border bg-black/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={typeImageBase64 || newType.imageUrl}
+                      alt="Style Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearTypeImage}
+                        className="h-7 px-2 text-[11px] bg-background/80 text-destructive border-destructive/40 hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <input
+                    ref={typeFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={convertingTypeImage}
+                    onChange={handleTypeImageFileChange}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  />
+                  {convertingTypeImage && (
+                    <p className="text-[11px] text-primary animate-pulse">
+                      Optimizing and converting image to Base64...
+                    </p>
+                  )}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
+                    <span className="shrink-0">or Image URL:</span>
+                    <input
+                      type="text"
+                      placeholder="https://... or /images/architecture/traditional-heritage.jpg"
+                      value={newType.imageUrl.startsWith("data:") ? "" : newType.imageUrl}
+                      onChange={(e) => {
+                        setTypeImageBase64("");
+                        setTypeImageSize("");
+                        setNewType({ ...newType, imageUrl: e.target.value });
+                      }}
+                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddTypeModalOpen(false)}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingType || convertingTypeImage}
+                  className="text-xs h-9 uppercase tracking-wider"
+                >
+                  {convertingTypeImage
+                    ? "Converting Image..."
+                    : submittingType
+                    ? "Saving Style..."
+                    : "Save Architectural Style"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* ADD ENGINEER / CHIEF MESTHRI MODAL */}
+      {/* ==================================================== */}
+      {isAddEngModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
+                  Site Execution Team
+                </span>
+                <h3 className="font-serif text-xl font-normal text-foreground">
+                  Add Site Engineer / Chief Mesthri
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsAddEngModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-mono"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEngineer} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Master Craftsman / Engineer Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mesthri P. Murugesan or Er. S. Vignesh, B.E."
+                  value={newEngineer.name}
+                  onChange={(e) => setNewEngineer({ ...newEngineer, name: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Designation / Role</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Senior Head Mesthri (Masonry & Timber)"
+                    value={newEngineer.role}
+                    onChange={(e) => setNewEngineer({ ...newEngineer, role: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Experience Record</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 25+ Years in Tenkasi & Tirunelveli"
+                    value={newEngineer.experience}
+                    onChange={(e) => setNewEngineer({ ...newEngineer, experience: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Craft Specialization</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Traditional Brick Bonding, Courtyard Roof Framing"
+                    value={newEngineer.specialization}
+                    onChange={(e) =>
+                      setNewEngineer({ ...newEngineer, specialization: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Phone / WhatsApp Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +91 94869 43652"
+                    value={newEngineer.phone}
+                    onChange={(e) => setNewEngineer({ ...newEngineer, phone: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Craft Profile / Experience Bio</label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe craftsmanship heritage, on-site quality adherence, structural supervision, etc."
+                  value={newEngineer.bio}
+                  onChange={(e) => setNewEngineer({ ...newEngineer, bio: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Photo Upload via Base64 or URL */}
+              <div className="space-y-3 p-4 bg-secondary/30 rounded-lg border border-border">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span>Profile Photo (Upload as Base64)</span>
+                  </label>
+                  {engImageBase64 && (
+                    <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
+                      Base64 Ready • {engImageSize}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Live Preview */}
+                {(engImageBase64 || newEngineer.imageUrl) && (
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border bg-black/20 mx-auto">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={engImageBase64 || newEngineer.imageUrl}
+                      alt="Profile Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-1 right-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearEngImage}
+                        className="h-6 w-6 p-0 bg-background/80 text-destructive border-destructive/40 hover:bg-destructive/10"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <input
+                    ref={engFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={convertingEngImage}
+                    onChange={handleEngImageFileChange}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  />
+                  {convertingEngImage && (
+                    <p className="text-[11px] text-primary animate-pulse">
+                      Optimizing and converting photo to Base64...
+                    </p>
+                  )}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
+                    <span className="shrink-0">or Photo URL:</span>
+                    <input
+                      type="text"
+                      placeholder="https://... or /images/team/mesthri.jpg"
+                      value={newEngineer.imageUrl.startsWith("data:") ? "" : newEngineer.imageUrl}
+                      onChange={(e) => {
+                        setEngImageBase64("");
+                        setEngImageSize("");
+                        setNewEngineer({ ...newEngineer, imageUrl: e.target.value });
+                      }}
+                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddEngModalOpen(false)}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingEng || convertingEngImage}
+                  className="text-xs h-9 uppercase tracking-wider"
+                >
+                  {convertingEngImage
+                    ? "Converting Photo..."
+                    : submittingEng
+                    ? "Saving Profile..."
+                    : "Save Engineer / Mesthri"}
                 </Button>
               </div>
             </form>
