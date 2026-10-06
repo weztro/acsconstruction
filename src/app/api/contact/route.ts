@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { contactFormSchema } from "@/lib/validations";
 import { sendContactEmail } from "@/lib/email";
+import { saveLeadToFirestore } from "@/lib/firebase";
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +21,13 @@ export async function POST(request: Request) {
     }
 
     const validatedData = parseResult.data;
+
+    // Save lead to Firestore Database
+    try {
+      await saveLeadToFirestore(validatedData);
+    } catch (dbError) {
+      console.warn("Firestore lead saving logged:", dbError);
+    }
 
     // Dispatch email (or safe simulation logger if credentials aren't set)
     const result = await sendContactEmail(validatedData);
