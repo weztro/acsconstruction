@@ -3,7 +3,11 @@
 import * as React from "react";
 import Image from "next/image";
 import { Users, HardHat, Award, Phone } from "lucide-react";
-import { fetchEngineersFromFirestore, type EngineerMesthri } from "@/lib/firebase";
+import {
+  fetchEngineersFromFirestore,
+  fetchHiddenDefaults,
+  type EngineerMesthri,
+} from "@/lib/firebase";
 import { Badge } from "@/components/ui/badge";
 
 const DEFAULT_LEADERSHIP = [
@@ -35,14 +39,16 @@ const DEFAULT_LEADERSHIP = [
 
 export function TeamSection() {
   const [customTeam, setCustomTeam] = React.useState<EngineerMesthri[]>([]);
+  const [hiddenLeaders, setHiddenLeaders] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     let isMounted = true;
-    fetchEngineersFromFirestore()
-      .then((items) => {
+    Promise.all([fetchEngineersFromFirestore(), fetchHiddenDefaults()])
+      .then(([items, hidden]) => {
         if (isMounted) {
           setCustomTeam(items);
+          setHiddenLeaders(hidden.hiddenEngineers || []);
           setLoading(false);
         }
       })
@@ -129,7 +135,7 @@ export function TeamSection() {
         ))}
 
         {/* Default Founding Leadership */}
-        {DEFAULT_LEADERSHIP.map((lead) => (
+        {DEFAULT_LEADERSHIP.filter((lead) => !hiddenLeaders.includes(lead.name)).map((lead) => (
           <div
             key={lead.name}
             className="p-7 sm:p-8 bg-card border border-border rounded-xl space-y-4 shadow-xs"

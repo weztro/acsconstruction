@@ -14,13 +14,19 @@ import {
   logSiteVisit,
   fetchProjectTypesFromFirestore,
   saveProjectTypeToFirestore,
+  updateProjectTypeInFirestore,
   deleteProjectTypeFromFirestore,
   fetchBudgetRangesFromFirestore,
   saveBudgetRangeToFirestore,
+  updateBudgetRangeInFirestore,
   deleteBudgetRangeFromFirestore,
   fetchEngineersFromFirestore,
   saveEngineerToFirestore,
+  updateEngineerInFirestore,
   deleteEngineerFromFirestore,
+  fetchHiddenDefaults,
+  saveHiddenDefaults,
+  type HiddenDefaultsConfig,
   type Lead,
   type ProjectItem,
   type SiteVisit,
@@ -64,6 +70,10 @@ import {
   Palette,
   Award,
   Layers,
+  Pencil,
+  RotateCcw,
+  Check,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -163,6 +173,61 @@ export default function AdminDashboardPage() {
   const [submittingEng, setSubmittingEng] = React.useState(false);
   const engFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  // Studio Settings: Hidden Defaults State
+  const [hiddenDefaults, setHiddenDefaults] = React.useState<HiddenDefaultsConfig>({
+    hiddenStyles: [],
+    hiddenBudgets: [],
+    hiddenEngineers: [],
+  });
+
+  // Edit Project Type Modal State
+  const [isEditTypeModalOpen, setIsEditTypeModalOpen] = React.useState(false);
+  const [editingType, setEditingType] = React.useState<{
+    id?: string;
+    title: string;
+    tagline: string;
+    description: string;
+    imageUrl: string;
+    keyElements: string;
+    isDefault?: boolean;
+    defaultId?: string;
+  } | null>(null);
+  const [editTypeImageBase64, setEditTypeImageBase64] = React.useState("");
+  const [convertingEditTypeImage, setConvertingEditTypeImage] = React.useState(false);
+  const [editTypeImageSize, setEditTypeImageSize] = React.useState("");
+  const [submittingEditType, setSubmittingEditType] = React.useState(false);
+  const editTypeFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Edit Budget Modal State
+  const [isEditBudgetModalOpen, setIsEditBudgetModalOpen] = React.useState(false);
+  const [editingBudget, setEditingBudget] = React.useState<{
+    id?: string;
+    range: string;
+    isDefault?: boolean;
+    defaultRange?: string;
+  } | null>(null);
+  const [submittingEditBudget, setSubmittingEditBudget] = React.useState(false);
+
+  // Edit Engineer / Mesthri Modal State
+  const [isEditEngModalOpen, setIsEditEngModalOpen] = React.useState(false);
+  const [editingEngineer, setEditingEngineer] = React.useState<{
+    id?: string;
+    name: string;
+    role: string;
+    experience: string;
+    specialization: string;
+    bio: string;
+    phone: string;
+    imageUrl: string;
+    isDefault?: boolean;
+    defaultName?: string;
+  } | null>(null);
+  const [editEngImageBase64, setEditEngImageBase64] = React.useState("");
+  const [convertingEditEngImage, setConvertingEditEngImage] = React.useState(false);
+  const [editEngImageSize, setEditEngImageSize] = React.useState("");
+  const [submittingEditEng, setSubmittingEditEng] = React.useState(false);
+  const editEngFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   // New Project Form State
   const [newProject, setNewProject] = React.useState({
     title: "",
@@ -216,14 +281,16 @@ export default function AdminDashboardPage() {
   const loadConfigData = React.useCallback(async () => {
     setConfigLoading(true);
     try {
-      const [types, budgets, engs] = await Promise.all([
+      const [types, budgets, engs, hidden] = await Promise.all([
         fetchProjectTypesFromFirestore(),
         fetchBudgetRangesFromFirestore(),
         fetchEngineersFromFirestore(),
+        fetchHiddenDefaults(),
       ]);
       setDynamicProjectTypes(types);
       setDynamicBudgets(budgets);
       setDynamicEngineers(engs);
+      setHiddenDefaults(hidden);
     } catch (err) {
       console.warn("Error loading config data:", err);
     } finally {
@@ -403,6 +470,316 @@ export default function AdminDashboardPage() {
     setNewEngineer((prev) => ({ ...prev, imageUrl: "" }));
     if (engFileInputRef.current) {
       engFileInputRef.current.value = "";
+    }
+  };
+
+  // ==========================================
+  // EDIT & REMOVE HANDLERS FOR STUDIO CONFIG
+  // ==========================================
+
+  // --- Project Types / Architectural Styles ---
+  const handleOpenEditType = (item: DynamicProjectType) => {
+    setEditingType({
+      id: item.id,
+      title: item.title,
+      tagline: item.tagline || "",
+      description: item.description || "",
+      imageUrl: item.imageUrl || "",
+      keyElements: (item.keyElements || []).join(", "),
+      isDefault: false,
+    });
+    setEditTypeImageBase64(item.imageUrl || "");
+    setEditTypeImageSize("");
+    setIsEditTypeModalOpen(true);
+  };
+
+  const handleOpenEditDefaultStyle = (style: (typeof INDIAN_DESIGN_STYLES)[number]) => {
+    setEditingType({
+      defaultId: style.id,
+      title: style.title,
+      tagline: style.tagline,
+      description: style.description,
+      imageUrl: style.imageUrl,
+      keyElements: style.keyElements.join(", "),
+      isDefault: true,
+    });
+    setEditTypeImageBase64(style.imageUrl);
+    setEditTypeImageSize("");
+    setIsEditTypeModalOpen(true);
+  };
+
+  const handleUpdateProjectType = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingType || !editingType.title.trim()) return;
+    setSubmittingEditType(true);
+
+    const elements = editingType.keyElements
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
+      title: editingType.title.trim(),
+      tagline: editingType.tagline.trim() || "Vernacular Architectural Style",
+      description: editingType.description.trim(),
+      imageUrl: editTypeImageBase64 || editingType.imageUrl || "/images/architecture/traditional-heritage.jpg",
+      keyElements: elements,
+    };
+
+    if (editingType.isDefault && editingType.defaultId) {
+      const res = await saveProjectTypeToFirestore(payload);
+      if (res.success) {
+        const newHidden = Array.from(new Set([...hiddenDefaults.hiddenStyles, editingType.defaultId]));
+        await saveHiddenDefaults({ hiddenStyles: newHidden });
+        setIsEditTypeModalOpen(false);
+        setEditingType(null);
+        setEditTypeImageBase64("");
+        loadConfigData();
+      } else {
+        alert("Failed to save customized style.");
+      }
+    } else if (editingType.id) {
+      const ok = await updateProjectTypeInFirestore(editingType.id, payload);
+      if (ok) {
+        setIsEditTypeModalOpen(false);
+        setEditingType(null);
+        setEditTypeImageBase64("");
+        loadConfigData();
+      } else {
+        alert("Failed to update style.");
+      }
+    }
+    setSubmittingEditType(false);
+  };
+
+  const handleRemoveDefaultStyle = async (styleId: string) => {
+    if (window.confirm("Remove this default architectural style from public view? You can restore it anytime.")) {
+      const newHidden = Array.from(new Set([...hiddenDefaults.hiddenStyles, styleId]));
+      await saveHiddenDefaults({ hiddenStyles: newHidden });
+      loadConfigData();
+    }
+  };
+
+  const handleRestoreDefaultStyles = async () => {
+    if (window.confirm("Restore all default architectural styles?")) {
+      await saveHiddenDefaults({ hiddenStyles: [] });
+      loadConfigData();
+    }
+  };
+
+  const handleEditTypeImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setConvertingEditTypeImage(true);
+      const b64 = await fileToBase64(file, 1200, 0.82);
+      setEditTypeImageBase64(b64);
+      const approxKb = Math.round((b64.length * 3) / 4 / 1024);
+      setEditTypeImageSize(`${approxKb} KB`);
+      setEditingType((prev) => (prev ? { ...prev, imageUrl: b64 } : prev));
+    } catch (err) {
+      console.error("Failed to convert style image to Base64:", err);
+      alert("Could not process image file. Please try another image.");
+    } finally {
+      setConvertingEditTypeImage(false);
+    }
+  };
+
+  const handleClearEditTypeImage = () => {
+    setEditTypeImageBase64("");
+    setEditTypeImageSize("");
+    setEditingType((prev) => (prev ? { ...prev, imageUrl: "" } : prev));
+    if (editTypeFileInputRef.current) {
+      editTypeFileInputRef.current.value = "";
+    }
+  };
+
+  // --- Budget Ranges ---
+  const handleOpenEditBudget = (b: DynamicBudgetRange) => {
+    setEditingBudget({
+      id: b.id,
+      range: b.range,
+      isDefault: false,
+    });
+    setIsEditBudgetModalOpen(true);
+  };
+
+  const handleOpenEditDefaultBudget = (range: string) => {
+    setEditingBudget({
+      range,
+      defaultRange: range,
+      isDefault: true,
+    });
+    setIsEditBudgetModalOpen(true);
+  };
+
+  const handleUpdateBudget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBudget || !editingBudget.range.trim()) return;
+    setSubmittingEditBudget(true);
+
+    if (editingBudget.isDefault && editingBudget.defaultRange) {
+      const res = await saveBudgetRangeToFirestore(editingBudget.range.trim());
+      if (res.success) {
+        const newHidden = Array.from(new Set([...hiddenDefaults.hiddenBudgets, editingBudget.defaultRange]));
+        await saveHiddenDefaults({ hiddenBudgets: newHidden });
+        setIsEditBudgetModalOpen(false);
+        setEditingBudget(null);
+        loadConfigData();
+      } else {
+        alert("Failed to save customized budget.");
+      }
+    } else if (editingBudget.id) {
+      const ok = await updateBudgetRangeInFirestore(editingBudget.id, editingBudget.range.trim());
+      if (ok) {
+        setIsEditBudgetModalOpen(false);
+        setEditingBudget(null);
+        loadConfigData();
+      } else {
+        alert("Failed to update budget range.");
+      }
+    }
+    setSubmittingEditBudget(false);
+  };
+
+  const handleRemoveDefaultBudget = async (range: string) => {
+    if (window.confirm(`Remove budget bracket "${range}" from the consultation dropdown? You can restore it anytime.`)) {
+      const newHidden = Array.from(new Set([...hiddenDefaults.hiddenBudgets, range]));
+      await saveHiddenDefaults({ hiddenBudgets: newHidden });
+      loadConfigData();
+    }
+  };
+
+  const handleRestoreDefaultBudgets = async () => {
+    if (window.confirm("Restore all default budget brackets?")) {
+      await saveHiddenDefaults({ hiddenBudgets: [] });
+      loadConfigData();
+    }
+  };
+
+  // --- Engineers & Chief Mesthris ---
+  const handleOpenEditEngineer = (eng: EngineerMesthri) => {
+    setEditingEngineer({
+      id: eng.id,
+      name: eng.name,
+      role: eng.role,
+      experience: eng.experience,
+      specialization: eng.specialization,
+      bio: eng.bio || "",
+      phone: eng.phone || "",
+      imageUrl: eng.imageUrl || "",
+      isDefault: false,
+    });
+    setEditEngImageBase64(eng.imageUrl || "");
+    setEditEngImageSize("");
+    setIsEditEngModalOpen(true);
+  };
+
+  const handleOpenEditDefaultLeader = (leader: {
+    name: string;
+    role: string;
+    experience: string;
+    specialization: string;
+    bio: string;
+    phone?: string;
+    imageUrl?: string;
+  }) => {
+    setEditingEngineer({
+      defaultName: leader.name,
+      name: leader.name,
+      role: leader.role,
+      experience: leader.experience,
+      specialization: leader.specialization,
+      bio: leader.bio,
+      phone: leader.phone || "+91 94869 43652",
+      imageUrl: leader.imageUrl || "",
+      isDefault: true,
+    });
+    setEditEngImageBase64(leader.imageUrl || "");
+    setEditEngImageSize("");
+    setIsEditEngModalOpen(true);
+  };
+
+  const handleUpdateEngineer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEngineer || !editingEngineer.name.trim()) return;
+    setSubmittingEditEng(true);
+
+    const payload = {
+      name: editingEngineer.name.trim(),
+      role: editingEngineer.role.trim(),
+      experience: editingEngineer.experience.trim(),
+      specialization: editingEngineer.specialization.trim(),
+      bio: editingEngineer.bio.trim(),
+      phone: editingEngineer.phone.trim(),
+      imageUrl: editEngImageBase64 || editingEngineer.imageUrl || "",
+    };
+
+    if (editingEngineer.isDefault && editingEngineer.defaultName) {
+      const res = await saveEngineerToFirestore(payload);
+      if (res.success) {
+        const newHidden = Array.from(new Set([...hiddenDefaults.hiddenEngineers, editingEngineer.defaultName]));
+        await saveHiddenDefaults({ hiddenEngineers: newHidden });
+        setIsEditEngModalOpen(false);
+        setEditingEngineer(null);
+        setEditEngImageBase64("");
+        loadConfigData();
+      } else {
+        alert("Failed to save customized profile.");
+      }
+    } else if (editingEngineer.id) {
+      const ok = await updateEngineerInFirestore(editingEngineer.id, payload);
+      if (ok) {
+        setIsEditEngModalOpen(false);
+        setEditingEngineer(null);
+        setEditEngImageBase64("");
+        loadConfigData();
+      } else {
+        alert("Failed to update engineer / mesthri.");
+      }
+    }
+    setSubmittingEditEng(false);
+  };
+
+  const handleRemoveDefaultEngineer = async (leaderName: string) => {
+    if (window.confirm(`Remove "${leaderName}" from the team showcase? You can restore them anytime.`)) {
+      const newHidden = Array.from(new Set([...hiddenDefaults.hiddenEngineers, leaderName]));
+      await saveHiddenDefaults({ hiddenEngineers: newHidden });
+      loadConfigData();
+    }
+  };
+
+  const handleRestoreDefaultEngineers = async () => {
+    if (window.confirm("Restore all default team leadership members?")) {
+      await saveHiddenDefaults({ hiddenEngineers: [] });
+      loadConfigData();
+    }
+  };
+
+  const handleEditEngImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setConvertingEditEngImage(true);
+      const b64 = await fileToBase64(file, 800, 0.82);
+      setEditEngImageBase64(b64);
+      const approxKb = Math.round((b64.length * 3) / 4 / 1024);
+      setEditEngImageSize(`${approxKb} KB`);
+      setEditingEngineer((prev) => (prev ? { ...prev, imageUrl: b64 } : prev));
+    } catch (err) {
+      console.error("Failed to convert engineer photo to Base64:", err);
+      alert("Could not process photo file.");
+    } finally {
+      setConvertingEditEngImage(false);
+    }
+  };
+
+  const handleClearEditEngImage = () => {
+    setEditEngImageBase64("");
+    setEditEngImageSize("");
+    setEditingEngineer((prev) => (prev ? { ...prev, imageUrl: "" } : prev));
+    if (editEngFileInputRef.current) {
+      editEngFileInputRef.current.value = "";
     }
   };
 
@@ -1564,6 +1941,23 @@ export default function AdminDashboardPage() {
                   </Button>
                 </div>
 
+                {hiddenDefaults.hiddenStyles.length > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                    <span className="text-muted-foreground">
+                      {hiddenDefaults.hiddenStyles.length} default architectural style(s) currently hidden.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRestoreDefaultStyles}
+                      className="text-xs h-7"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Restore Default Styles
+                    </Button>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Dynamic Types from Firestore */}
                   {dynamicProjectTypes.map((item) => (
@@ -1618,7 +2012,16 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="p-4 border-t border-border flex justify-end">
+                      <div className="p-4 border-t border-border flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditType(item)}
+                          className="text-xs h-8 text-foreground hover:bg-secondary/80"
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1 text-primary" />
+                          <span>Edit</span>
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1632,11 +2035,13 @@ export default function AdminDashboardPage() {
                     </div>
                   ))}
 
-                  {/* Built-in Default Architectural Styles (Preserved) */}
-                  {INDIAN_DESIGN_STYLES.map((style) => (
+                  {/* Built-in Default Architectural Styles (Preserved & Editable) */}
+                  {INDIAN_DESIGN_STYLES.filter(
+                    (style) => !hiddenDefaults.hiddenStyles.includes(style.id)
+                  ).map((style) => (
                     <div
                       key={style.id}
-                      className="bg-card border border-border rounded-xl overflow-hidden shadow-xs flex flex-col justify-between opacity-90"
+                      className="bg-card border border-border rounded-xl overflow-hidden shadow-xs flex flex-col justify-between opacity-95"
                     >
                       <div>
                         <div className="relative aspect-[16/10] bg-secondary/50 overflow-hidden">
@@ -1671,8 +2076,32 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="p-4 border-t border-border/60 text-[11px] text-muted-foreground font-mono">
-                        Core Atelier Architectural Style
+                      <div className="p-4 border-t border-border/60 flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground font-mono">
+                          Core Atelier Style
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEditDefaultStyle(style)}
+                            className="text-xs h-8 text-foreground hover:bg-secondary/80"
+                            title="Edit and customize this style"
+                          >
+                            <Pencil className="w-3.5 h-3.5 mr-1 text-primary" />
+                            <span>Edit</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveDefaultStyle(style.id)}
+                            className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                            title="Remove this style from public view"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                            <span>Remove</span>
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1716,6 +2145,23 @@ export default function AdminDashboardPage() {
                   </Button>
                 </form>
 
+                {hiddenDefaults.hiddenBudgets.length > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                    <span className="text-muted-foreground">
+                      {hiddenDefaults.hiddenBudgets.length} default budget bracket(s) currently hidden.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRestoreDefaultBudgets}
+                      className="text-xs h-7"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Restore Default Budgets
+                    </Button>
+                  </div>
+                )}
+
                 {/* Budgets List Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Dynamic Firestore Budgets */}
@@ -1733,18 +2179,33 @@ export default function AdminDashboardPage() {
                           Custom
                         </Badge>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => b.id && handleDeleteBudget(b.id)}
-                        className="text-muted-foreground hover:text-destructive p-1 rounded"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenEditBudget(b)}
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          title="Edit Budget Bracket"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => b.id && handleDeleteBudget(b.id)}
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                          title="Remove Budget Bracket"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
 
-                  {/* Default Budgets */}
-                  {BUDGET_RANGES.map((range, i) => (
+                  {/* Default Budgets (Editable & Removable) */}
+                  {BUDGET_RANGES.filter(
+                    (range) => !hiddenDefaults.hiddenBudgets.includes(range)
+                  ).map((range, i) => (
                     <div
                       key={i}
                       className="p-4 bg-card border border-border rounded-lg flex items-center justify-between shadow-xs opacity-90"
@@ -1754,8 +2215,28 @@ export default function AdminDashboardPage() {
                         <span className="text-xs font-medium text-foreground font-mono">
                           {range}
                         </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">Default</span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground font-mono">Default</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenEditDefaultBudget(range)}
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          title="Edit / Customize Default Budget Bracket"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveDefaultBudget(range)}
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                          title="Remove Default Budget Bracket"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1783,6 +2264,23 @@ export default function AdminDashboardPage() {
                     <span>Add Engineer / Mesthri</span>
                   </Button>
                 </div>
+
+                {hiddenDefaults.hiddenEngineers.length > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                    <span className="text-muted-foreground">
+                      {hiddenDefaults.hiddenEngineers.length} default leadership profile(s) currently hidden.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRestoreDefaultEngineers}
+                      className="text-xs h-7"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Restore Default Leadership
+                    </Button>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Dynamic Firestore Engineers & Mesthris */}
@@ -1830,7 +2328,16 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-border flex justify-end">
+                      <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditEngineer(eng)}
+                          className="text-xs h-8 text-foreground hover:bg-secondary/80"
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1 text-primary" />
+                          <span>Edit</span>
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1844,66 +2351,95 @@ export default function AdminDashboardPage() {
                     </div>
                   ))}
 
-                  {/* Core Founding Leadership (Always Displayed) */}
-                  <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-xs opacity-90">
-                    <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-serif text-lg">
-                      K
-                    </div>
-                    <div>
-                      <h4 className="font-serif text-base font-normal text-foreground">
-                        Ar. K. Ramanathan
-                      </h4>
-                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
-                        Principal Architect &amp; Founder
-                      </p>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                        30+ Years Experience
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
-                      Vernacular thermal physics, traditional Chettinad timber joinery.
-                    </p>
-                  </div>
+                  {/* Core Founding Leadership (Editable & Removable) */}
+                  {[
+                    {
+                      name: "Ar. K. Ramanathan",
+                      role: "Principal Architect & Founder",
+                      experience: "30+ Years Experience",
+                      specialization: "Vernacular thermal physics, traditional Chettinad timber joinery",
+                      bio: "Vernacular thermal physics, traditional Chettinad timber joinery.",
+                      phone: "+91 94869 43652",
+                      letter: "K",
+                    },
+                    {
+                      name: "Er. Rajeshwari Menon",
+                      role: "Head of Structural Engineering",
+                      experience: "22+ Years Experience",
+                      specialization: "M.Tech IIT Madras. Seismic foundation safety and concrete curing audits",
+                      bio: "M.Tech IIT Madras. Seismic foundation safety and concrete curing audits.",
+                      phone: "+91 94869 43652",
+                      letter: "R",
+                    },
+                    {
+                      name: "Sthapati V. Murugesan",
+                      role: "Master Sthapati & Head Mesthri",
+                      experience: "35+ Years Heritage Mastery",
+                      specialization: "Generational stone carving, temple masonry, Athangudi tile casting",
+                      bio: "Generational stone carving, temple masonry, Athangudi tile casting.",
+                      phone: "+91 94869 43652",
+                      letter: "M",
+                    },
+                  ]
+                    .filter((leader) => !hiddenDefaults.hiddenEngineers.includes(leader.name))
+                    .map((leader, i) => (
+                      <div
+                        key={i}
+                        className="p-6 bg-card border border-border rounded-xl space-y-4 shadow-xs flex flex-col justify-between opacity-95"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-serif text-lg">
+                              {leader.letter}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              Default Leader
+                            </span>
+                          </div>
 
-                  <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-xs opacity-90">
-                    <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-serif text-lg">
-                      R
-                    </div>
-                    <div>
-                      <h4 className="font-serif text-base font-normal text-foreground">
-                        Er. Rajeshwari Menon
-                      </h4>
-                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
-                        Head of Structural Engineering
-                      </p>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                        22+ Years Experience
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
-                      M.Tech IIT Madras. Seismic foundation safety and concrete curing audits.
-                    </p>
-                  </div>
+                          <div>
+                            <h4 className="font-serif text-base font-normal text-foreground">
+                              {leader.name}
+                            </h4>
+                            <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
+                              {leader.role}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                              {leader.experience}
+                            </p>
+                          </div>
 
-                  <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-xs opacity-90">
-                    <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-serif text-lg">
-                      M
-                    </div>
-                    <div>
-                      <h4 className="font-serif text-base font-normal text-foreground">
-                        Sthapati V. Murugesan
-                      </h4>
-                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mt-0.5">
-                        Master Sthapati &amp; Head Mesthri
-                      </p>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                        35+ Years Heritage Mastery
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
-                      Generational stone carving, temple masonry, Athangudi tile casting.
-                    </p>
-                  </div>
+                          <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border/50">
+                            <p className="font-medium text-foreground text-[11px]">Specialization:</p>
+                            <p>{leader.specialization}</p>
+                            {leader.phone && <p className="text-[11px] pt-1">Phone: {leader.phone}</p>}
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEditDefaultLeader(leader)}
+                            className="text-xs h-8 text-foreground hover:bg-secondary/80"
+                            title="Edit / Customize this leadership profile"
+                          >
+                            <Pencil className="w-3.5 h-3.5 mr-1 text-primary" />
+                            <span>Edit</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveDefaultEngineer(leader.name)}
+                            className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                            title="Remove this profile from public view"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                            <span>Remove</span>
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </div>
             )}
@@ -2471,6 +3007,444 @@ export default function AdminDashboardPage() {
                     : submittingEng
                     ? "Saving Profile..."
                     : "Save Engineer / Mesthri"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* EDIT PROJECT TYPE / ARCHITECTURAL STYLE MODAL */}
+      {/* ==================================================== */}
+      {isEditTypeModalOpen && editingType && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
+                  {editingType.isDefault ? "Customize Standard Style" : "Edit Architectural Style"}
+                </span>
+                <h3 className="font-serif text-xl font-normal text-foreground">
+                  {editingType.title || "Edit Project Type"}
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditTypeModalOpen(false);
+                  setEditingType(null);
+                }}
+                className="text-muted-foreground hover:text-foreground text-sm font-mono"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProjectType} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Style / Project Type Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Kerala Nalukettu Heritage"
+                  value={editingType.title}
+                  onChange={(e) => setEditingType({ ...editingType, title: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Tagline / Subheading</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Sloped Mangalore Clay Roofs & Nadumuttam Courtyards"
+                  value={editingType.tagline}
+                  onChange={(e) => setEditingType({ ...editingType, tagline: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Architectural Narrative / Description</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Explain vernacular design philosophy..."
+                  value={editingType.description}
+                  onChange={(e) => setEditingType({ ...editingType, description: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Key Design Elements (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Nadumuttam Courtyard, Clay Roof Tiles, Timber Posts"
+                  value={editingType.keyElements}
+                  onChange={(e) => setEditingType({ ...editingType, keyElements: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Style Image Upload via Base64 or URL */}
+              <div className="space-y-3 p-4 bg-secondary/30 rounded-lg border border-border">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span>Style Cover Image (Upload as Base64)</span>
+                  </label>
+                  {editTypeImageBase64 && editTypeImageSize && (
+                    <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
+                      Base64 Ready • {editTypeImageSize}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Preview */}
+                {(editTypeImageBase64 || editingType.imageUrl) && (
+                  <div className="relative aspect-[16/9] w-full rounded-md overflow-hidden border border-border bg-black/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={editTypeImageBase64 || editingType.imageUrl}
+                      alt="Style Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearEditTypeImage}
+                        className="h-7 px-2 text-[11px] bg-background/80 text-destructive border-destructive/40 hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <input
+                    ref={editTypeFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={convertingEditTypeImage}
+                    onChange={handleEditTypeImageFileChange}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  />
+                  {convertingEditTypeImage && (
+                    <p className="text-[11px] text-primary animate-pulse">
+                      Optimizing and converting image to Base64...
+                    </p>
+                  )}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
+                    <span className="shrink-0">or Image URL:</span>
+                    <input
+                      type="text"
+                      placeholder="https://... or /images/architecture/traditional-heritage.jpg"
+                      value={editingType.imageUrl.startsWith("data:") ? "" : editingType.imageUrl}
+                      onChange={(e) => {
+                        setEditTypeImageBase64("");
+                        setEditTypeImageSize("");
+                        setEditingType({ ...editingType, imageUrl: e.target.value });
+                      }}
+                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditTypeModalOpen(false);
+                    setEditingType(null);
+                  }}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingEditType || convertingEditTypeImage}
+                  className="text-xs h-9 uppercase tracking-wider"
+                >
+                  {convertingEditTypeImage
+                    ? "Converting..."
+                    : submittingEditType
+                    ? "Saving Changes..."
+                    : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* EDIT BUDGET MODAL */}
+      {/* ==================================================== */}
+      {isEditBudgetModalOpen && editingBudget && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-md p-6 sm:p-8 space-y-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600 font-mono">
+                  {editingBudget.isDefault ? "Customize Default Budget" : "Edit Budget Bracket"}
+                </span>
+                <h3 className="font-serif text-lg font-normal text-foreground">
+                  Budget Range Option
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditBudgetModalOpen(false);
+                  setEditingBudget(null);
+                }}
+                className="text-muted-foreground hover:text-foreground text-sm font-mono"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateBudget} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Budget Bracket Label</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. ₹35 Lakhs – ₹60 Lakhs"
+                  value={editingBudget.range}
+                  onChange={(e) => setEditingBudget({ ...editingBudget, range: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Appears in client enquiry dropdowns on the Contact page.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditBudgetModalOpen(false);
+                    setEditingBudget(null);
+                  }}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingEditBudget}
+                  className="text-xs h-9 uppercase tracking-wider"
+                >
+                  {submittingEditBudget ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* EDIT ENGINEER / CHIEF MESTHRI MODAL */}
+      {/* ==================================================== */}
+      {isEditEngModalOpen && editingEngineer && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
+                  {editingEngineer.isDefault ? "Customize Team Profile" : "Edit Engineer / Mesthri"}
+                </span>
+                <h3 className="font-serif text-xl font-normal text-foreground">
+                  {editingEngineer.name || "Edit Profile"}
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditEngModalOpen(false);
+                  setEditingEngineer(null);
+                }}
+                className="text-muted-foreground hover:text-foreground text-sm font-mono"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateEngineer} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Master Craftsman / Engineer Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mesthri P. Murugesan or Er. S. Vignesh, B.E."
+                  value={editingEngineer.name}
+                  onChange={(e) => setEditingEngineer({ ...editingEngineer, name: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Designation / Role</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Senior Head Mesthri (Masonry & Timber)"
+                    value={editingEngineer.role}
+                    onChange={(e) => setEditingEngineer({ ...editingEngineer, role: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Experience Record</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 25+ Years in Tenkasi & Tirunelveli"
+                    value={editingEngineer.experience}
+                    onChange={(e) => setEditingEngineer({ ...editingEngineer, experience: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Craft Specialization</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Traditional Brick Bonding, Courtyard Roof Framing"
+                    value={editingEngineer.specialization}
+                    onChange={(e) =>
+                      setEditingEngineer({ ...editingEngineer, specialization: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Phone / WhatsApp Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +91 94869 43652"
+                    value={editingEngineer.phone}
+                    onChange={(e) => setEditingEngineer({ ...editingEngineer, phone: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Craft Profile / Experience Bio</label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe craftsmanship heritage, on-site quality adherence..."
+                  value={editingEngineer.bio}
+                  onChange={(e) => setEditingEngineer({ ...editingEngineer, bio: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Photo Upload via Base64 or URL */}
+              <div className="space-y-3 p-4 bg-secondary/30 rounded-lg border border-border">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span>Profile Photo (Upload as Base64)</span>
+                  </label>
+                  {editEngImageBase64 && editEngImageSize && (
+                    <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
+                      Base64 Ready • {editEngImageSize}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Live Preview */}
+                {(editEngImageBase64 || editingEngineer.imageUrl) && (
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border bg-black/20 mx-auto">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={editEngImageBase64 || editingEngineer.imageUrl}
+                      alt="Profile Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-1 right-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearEditEngImage}
+                        className="h-6 w-6 p-0 bg-background/80 text-destructive border-destructive/40 hover:bg-destructive/10"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <input
+                    ref={editEngFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={convertingEditEngImage}
+                    onChange={handleEditEngImageFileChange}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  />
+                  {convertingEditEngImage && (
+                    <p className="text-[11px] text-primary animate-pulse">
+                      Optimizing and converting photo to Base64...
+                    </p>
+                  )}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
+                    <span className="shrink-0">or Photo URL:</span>
+                    <input
+                      type="text"
+                      placeholder="https://... or /images/team/mesthri.jpg"
+                      value={editingEngineer.imageUrl.startsWith("data:") ? "" : editingEngineer.imageUrl}
+                      onChange={(e) => {
+                        setEditEngImageBase64("");
+                        setEditEngImageSize("");
+                        setEditingEngineer({ ...editingEngineer, imageUrl: e.target.value });
+                      }}
+                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditEngModalOpen(false);
+                    setEditingEngineer(null);
+                  }}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingEditEng || convertingEditEngImage}
+                  className="text-xs h-9 uppercase tracking-wider"
+                >
+                  {convertingEditEngImage
+                    ? "Converting..."
+                    : submittingEditEng
+                    ? "Saving Changes..."
+                    : "Save Changes"}
                 </Button>
               </div>
             </form>

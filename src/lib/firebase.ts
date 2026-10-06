@@ -9,6 +9,8 @@ import {
   updateDoc,
   doc,
   deleteDoc,
+  getDoc,
+  setDoc,
   serverTimestamp,
   limit,
   type Firestore,
@@ -372,6 +374,23 @@ export async function deleteProjectTypeFromFirestore(id: string): Promise<boolea
   }
 }
 
+export async function updateProjectTypeInFirestore(
+  id: string,
+  data: Partial<Omit<DynamicProjectType, "id" | "createdAt">>
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await updateDoc(doc(db, "project_types", id), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating project type:", error);
+    return false;
+  }
+}
+
 // ----------------------------------------------------
 // Dynamic Estimated Budget Ranges Services
 // ----------------------------------------------------
@@ -410,6 +429,23 @@ export async function saveBudgetRangeToFirestore(
   } catch (error) {
     console.error("Error saving budget range to Firestore:", error);
     return { success: false };
+  }
+}
+
+export async function updateBudgetRangeInFirestore(
+  id: string,
+  range: string
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await updateDoc(doc(db, "budget_ranges", id), {
+      range,
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating budget range:", error);
+    return false;
   }
 }
 
@@ -471,6 +507,23 @@ export async function saveEngineerToFirestore(
   }
 }
 
+export async function updateEngineerInFirestore(
+  id: string,
+  data: Partial<Omit<EngineerMesthri, "id" | "createdAt">>
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await updateDoc(doc(db, "engineers_mesthri", id), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating engineer/mesthri:", error);
+    return false;
+  }
+}
+
 export async function deleteEngineerFromFirestore(id: string): Promise<boolean> {
   if (!db) return false;
   try {
@@ -478,6 +531,50 @@ export async function deleteEngineerFromFirestore(id: string): Promise<boolean> 
     return true;
   } catch (error) {
     console.error("Error deleting engineer/mesthri:", error);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// Studio Settings: Defaults Visibility (Hidden Defaults)
+// ----------------------------------------------------
+
+export interface HiddenDefaultsConfig {
+  hiddenStyles: string[];
+  hiddenBudgets: string[];
+  hiddenEngineers: string[];
+}
+
+export async function fetchHiddenDefaults(): Promise<HiddenDefaultsConfig> {
+  if (!db) return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [] };
+  try {
+    const docRef = doc(db, "studio_settings", "hidden_defaults");
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        hiddenStyles: Array.isArray(data.hiddenStyles) ? data.hiddenStyles : [],
+        hiddenBudgets: Array.isArray(data.hiddenBudgets) ? data.hiddenBudgets : [],
+        hiddenEngineers: Array.isArray(data.hiddenEngineers) ? data.hiddenEngineers : [],
+      };
+    }
+    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [] };
+  } catch (e) {
+    console.warn("Could not fetch hidden defaults:", e);
+    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [] };
+  }
+}
+
+export async function saveHiddenDefaults(
+  config: Partial<HiddenDefaultsConfig>
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const docRef = doc(db, "studio_settings", "hidden_defaults");
+    await setDoc(docRef, config, { merge: true });
+    return true;
+  } catch (e) {
+    console.error("Error saving hidden defaults:", e);
     return false;
   }
 }

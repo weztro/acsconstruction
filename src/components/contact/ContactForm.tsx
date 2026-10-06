@@ -21,6 +21,7 @@ import { Send, CheckCircle2, Loader2, MessageSquare, Phone } from "lucide-react"
 import {
   fetchProjectTypesFromFirestore,
   fetchBudgetRangesFromFirestore,
+  fetchHiddenDefaults,
 } from "@/lib/firebase";
 
 function buildWhatsAppUrl(data: ContactFormData): string {
@@ -56,19 +57,22 @@ export function ContactForm() {
     Promise.all([
       fetchProjectTypesFromFirestore(),
       fetchBudgetRangesFromFirestore(),
+      fetchHiddenDefaults(),
     ])
-      .then(([customTypes, customBudgets]) => {
+      .then(([customTypes, customBudgets, hidden]) => {
         if (!isMounted) return;
-        if (customTypes && customTypes.length > 0) {
-          const names = customTypes.map((t) => t.title);
-          const merged = Array.from(new Set([...names, ...PROJECT_TYPES]));
-          setProjectTypes(merged);
-        }
-        if (customBudgets && customBudgets.length > 0) {
-          const ranges = customBudgets.map((b) => b.range);
-          const merged = Array.from(new Set([...ranges, ...BUDGET_RANGES]));
-          setBudgetRanges(merged);
-        }
+        const hiddenTypes = new Set(hidden.hiddenStyles);
+        const hiddenBuds = new Set(hidden.hiddenBudgets);
+
+        const customNames = (customTypes || []).map((t) => t.title);
+        const validDefaultTypes = PROJECT_TYPES.filter((t) => !hiddenTypes.has(t));
+        const mergedTypes = Array.from(new Set([...customNames, ...validDefaultTypes]));
+        setProjectTypes(mergedTypes);
+
+        const customRanges = (customBudgets || []).map((b) => b.range);
+        const validDefaultBudgets = BUDGET_RANGES.filter((b) => !hiddenBuds.has(b));
+        const mergedBudgets = Array.from(new Set([...customRanges, ...validDefaultBudgets]));
+        setBudgetRanges(mergedBudgets);
       })
       .catch((err) => {
         console.warn("Could not load dynamic types/budgets in ContactForm:", err);

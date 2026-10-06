@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { INDIAN_DESIGN_STYLES, type DesignStyle } from "@/lib/constants";
-import { fetchProjectTypesFromFirestore } from "@/lib/firebase";
+import { fetchProjectTypesFromFirestore, fetchHiddenDefaults } from "@/lib/firebase";
 import { ArrowRight } from "lucide-react";
 import { ArchitecturalImage } from "@/components/ui/architectural-image";
 
@@ -12,10 +12,11 @@ export function ArchitectureShowcase() {
 
   React.useEffect(() => {
     let isMounted = true;
-    fetchProjectTypesFromFirestore()
-      .then((custom) => {
-        if (!isMounted || !custom || custom.length === 0) return;
-        const mappedCustom: DesignStyle[] = custom.map((c) => ({
+    Promise.all([fetchProjectTypesFromFirestore(), fetchHiddenDefaults()])
+      .then(([custom, hidden]) => {
+        if (!isMounted) return;
+        const hiddenIds = new Set(hidden.hiddenStyles);
+        const mappedCustom: DesignStyle[] = (custom || []).map((c) => ({
           id: c.id || c.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
           title: c.title,
           tagline: c.tagline || "Custom Architectural Style",
@@ -28,7 +29,8 @@ export function ArchitectureShowcase() {
               : ["Vernacular Design", "Natural Stone", "Custom Courtyard"],
           imageUrl: c.imageUrl || "/images/architecture/traditional-heritage.jpg",
         }));
-        setStyles([...mappedCustom, ...INDIAN_DESIGN_STYLES]);
+        const validDefaults = INDIAN_DESIGN_STYLES.filter((s) => !hiddenIds.has(s.id));
+        setStyles([...mappedCustom, ...validDefaults]);
       })
       .catch(console.warn);
 
