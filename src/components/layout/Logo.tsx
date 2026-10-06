@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 interface LogoProps {
   className?: string;
   markClassName?: string;
+  imageClassName?: string;
   textClassName?: string;
   size?: "sm" | "md" | "lg" | "xl";
   showTagline?: boolean;
@@ -43,6 +44,7 @@ export function AcsMark({ className }: { className?: string }) {
 export function Logo({
   className,
   markClassName,
+  imageClassName,
   textClassName,
   size = "md",
   showTagline = true,
@@ -50,10 +52,10 @@ export function Logo({
   asLink = true,
 }: LogoProps) {
   const sizeStyles = {
-    sm: "h-9 sm:h-10",
-    md: "h-11 sm:h-12",
-    lg: "h-16 sm:h-20",
-    xl: "h-20 sm:h-24",
+    sm: "h-10 sm:h-11",
+    md: "h-14 sm:h-16 lg:h-20",
+    lg: "h-20 sm:h-24 lg:h-28",
+    xl: "h-24 sm:h-32",
   };
 
   const heightClass = sizeStyles[size] || sizeStyles.md;
@@ -74,7 +76,11 @@ export function Logo({
           height={651}
           priority
           unoptimized
-          className={cn("w-auto object-contain dark:hidden drop-shadow-xs", heightClass)}
+          className={cn(
+            "w-auto object-contain dark:hidden drop-shadow-xs transition-all duration-300",
+            heightClass,
+            imageClassName
+          )}
         />
         {/* Dark theme logo */}
         <Image
@@ -84,7 +90,11 @@ export function Logo({
           height={651}
           priority
           unoptimized
-          className={cn("w-auto object-contain hidden dark:block drop-shadow-xs", heightClass)}
+          className={cn(
+            "w-auto object-contain hidden dark:block drop-shadow-xs transition-all duration-300",
+            heightClass,
+            imageClassName
+          )}
         />
       </div>
 

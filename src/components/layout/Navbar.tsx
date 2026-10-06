@@ -25,13 +25,20 @@ export function Navbar() {
     <header
       className={`sticky top-0 z-40 w-full transition-all duration-300 ${
         isScrolled
-          ? "bg-background/95 backdrop-blur-md border-b border-border/80 shadow-xs py-3.5"
-          : "bg-background/85 backdrop-blur-xs border-b border-border/40 py-5"
+          ? "bg-background/95 backdrop-blur-md border-b border-border/80 shadow-xs py-2 sm:py-2.5"
+          : "bg-background/85 backdrop-blur-xs border-b border-border/40 py-2.5 sm:py-3.5"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 flex items-center justify-between">
         {/* Brand Logo & Ethos */}
-        <Logo size="md" />
+        <Logo
+          size="md"
+          imageClassName={
+            isScrolled
+              ? "!h-12 sm:!h-14 lg:!h-16"
+              : "!h-16 sm:!h-20 lg:!h-24"
+          }
+        />
 
         {/* Desktop Navigation Links */}
         <nav
