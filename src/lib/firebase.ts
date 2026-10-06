@@ -609,6 +609,82 @@ export async function deleteEngineerFromFirestore(id: string): Promise<boolean> 
 }
 
 // ----------------------------------------------------
+// Dynamic Customer Feedback / Testimonials Services ("What Families Say")
+// ----------------------------------------------------
+
+export interface DynamicTestimonial {
+  id?: string;
+  quote: string;
+  clientName: string;
+  homeType: string;
+  city: string;
+  year: string;
+  rating?: number;
+  avatarUrl?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
+export async function fetchTestimonialsFromFirestore(): Promise<DynamicTestimonial[]> {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, "testimonials"), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as DynamicTestimonial[];
+  } catch (error) {
+    console.error("Error fetching testimonials from Firestore:", error);
+    return [];
+  }
+}
+
+export async function saveTestimonialToFirestore(
+  data: Omit<DynamicTestimonial, "id" | "createdAt">
+): Promise<{ success: boolean; id?: string }> {
+  if (!db) return { success: false };
+  try {
+    const docRef = await addDoc(collection(db, "testimonials"), {
+      ...data,
+      createdAt: serverTimestamp(),
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error("Error saving testimonial to Firestore:", error);
+    return { success: false };
+  }
+}
+
+export async function updateTestimonialInFirestore(
+  id: string,
+  data: Partial<Omit<DynamicTestimonial, "id" | "createdAt">>
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await updateDoc(doc(db, "testimonials", id), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating testimonial:", error);
+    return false;
+  }
+}
+
+export async function deleteTestimonialFromFirestore(id: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await deleteDoc(doc(db, "testimonials", id));
+    return true;
+  } catch (error) {
+    console.error("Error deleting testimonial:", error);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
 // Studio Settings: Defaults Visibility (Hidden Defaults)
 // ----------------------------------------------------
 
@@ -616,10 +692,11 @@ export interface HiddenDefaultsConfig {
   hiddenStyles: string[];
   hiddenBudgets: string[];
   hiddenEngineers: string[];
+  hiddenTestimonials?: string[];
 }
 
 export async function fetchHiddenDefaults(): Promise<HiddenDefaultsConfig> {
-  if (!db) return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [] };
+  if (!db) return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [], hiddenTestimonials: [] };
   try {
     const docRef = doc(db, "studio_settings", "hidden_defaults");
     const snap = await getDoc(docRef);
@@ -629,12 +706,13 @@ export async function fetchHiddenDefaults(): Promise<HiddenDefaultsConfig> {
         hiddenStyles: Array.isArray(data.hiddenStyles) ? data.hiddenStyles : [],
         hiddenBudgets: Array.isArray(data.hiddenBudgets) ? data.hiddenBudgets : [],
         hiddenEngineers: Array.isArray(data.hiddenEngineers) ? data.hiddenEngineers : [],
+        hiddenTestimonials: Array.isArray(data.hiddenTestimonials) ? data.hiddenTestimonials : [],
       };
     }
-    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [] };
+    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [], hiddenTestimonials: [] };
   } catch (e) {
     console.warn("Could not fetch hidden defaults:", e);
-    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [] };
+    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [], hiddenTestimonials: [] };
   }
 }
 

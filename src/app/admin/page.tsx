@@ -24,6 +24,10 @@ import {
   saveEngineerToFirestore,
   updateEngineerInFirestore,
   deleteEngineerFromFirestore,
+  fetchTestimonialsFromFirestore,
+  saveTestimonialToFirestore,
+  updateTestimonialInFirestore,
+  deleteTestimonialFromFirestore,
   fetchHiddenDefaults,
   saveHiddenDefaults,
   type HiddenDefaultsConfig,
@@ -33,8 +37,9 @@ import {
   type DynamicProjectType,
   type DynamicBudgetRange,
   type EngineerMesthri,
+  type DynamicTestimonial,
 } from "@/lib/firebase";
-import { INDIAN_DESIGN_STYLES, BUDGET_RANGES } from "@/lib/constants";
+import { INDIAN_DESIGN_STYLES, BUDGET_RANGES, TESTIMONIALS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -74,6 +79,9 @@ import {
   RotateCcw,
   Check,
   X,
+  Quote,
+  Star,
+  MessageSquareQuote,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -130,11 +138,12 @@ export default function AdminDashboardPage() {
   const [visits, setVisits] = React.useState<SiteVisit[]>([]);
   const [visitsLoading, setVisitsLoading] = React.useState(true);
 
-  // Studio Master Config State (Budgets, Project Types & Mesthris)
-  const [configSubTab, setConfigSubTab] = React.useState<"styles" | "budgets" | "engineers">("styles");
+  // Studio Master Config State (Budgets, Project Types, Mesthris & Testimonials)
+  const [configSubTab, setConfigSubTab] = React.useState<"styles" | "budgets" | "engineers" | "testimonials">("styles");
   const [dynamicProjectTypes, setDynamicProjectTypes] = React.useState<DynamicProjectType[]>([]);
   const [dynamicBudgets, setDynamicBudgets] = React.useState<DynamicBudgetRange[]>([]);
   const [dynamicEngineers, setDynamicEngineers] = React.useState<EngineerMesthri[]>([]);
+  const [dynamicTestimonials, setDynamicTestimonials] = React.useState<DynamicTestimonial[]>([]);
   const [configLoading, setConfigLoading] = React.useState(false);
 
   // New Project Type Modal & Form
@@ -178,6 +187,7 @@ export default function AdminDashboardPage() {
     hiddenStyles: [],
     hiddenBudgets: [],
     hiddenEngineers: [],
+    hiddenTestimonials: [],
   });
 
   // Edit Project Type Modal State
@@ -228,6 +238,43 @@ export default function AdminDashboardPage() {
   const [submittingEditEng, setSubmittingEditEng] = React.useState(false);
   const editEngFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  // New Customer Feedback / Testimonial Modal & Form
+  const [isAddTestModalOpen, setIsAddTestModalOpen] = React.useState(false);
+  const [newTestimonial, setNewTestimonial] = React.useState({
+    clientName: "",
+    homeType: "Courtyard Heritage Villa (5,400 sq.ft.)",
+    city: "Tenkasi, Tamil Nadu",
+    year: "2025",
+    quote: "",
+    rating: 5,
+    avatarUrl: "",
+  });
+  const [testImageBase64, setTestImageBase64] = React.useState("");
+  const [convertingTestImage, setConvertingTestImage] = React.useState(false);
+  const [testImageSize, setTestImageSize] = React.useState("");
+  const [submittingTestimonial, setSubmittingTestimonial] = React.useState(false);
+  const testFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Edit Testimonial Modal State
+  const [isEditTestModalOpen, setIsEditTestModalOpen] = React.useState(false);
+  const [editingTestimonial, setEditingTestimonial] = React.useState<{
+    id?: string;
+    clientName: string;
+    homeType: string;
+    city: string;
+    year: string;
+    quote: string;
+    rating: number;
+    avatarUrl: string;
+    isDefault?: boolean;
+    defaultId?: string;
+  } | null>(null);
+  const [editTestImageBase64, setEditTestImageBase64] = React.useState("");
+  const [convertingEditTestImage, setConvertingEditTestImage] = React.useState(false);
+  const [editTestImageSize, setEditTestImageSize] = React.useState("");
+  const [submittingEditTest, setSubmittingEditTest] = React.useState(false);
+  const editTestFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   // New Project Form State
   const [newProject, setNewProject] = React.useState({
     title: "",
@@ -277,19 +324,21 @@ export default function AdminDashboardPage() {
     setVisitsLoading(false);
   }, []);
 
-  // Load Studio Master Configuration (Types, Budgets, Engineers)
+  // Load Studio Master Configuration (Types, Budgets, Engineers & Testimonials)
   const loadConfigData = React.useCallback(async () => {
     setConfigLoading(true);
     try {
-      const [types, budgets, engs, hidden] = await Promise.all([
+      const [types, budgets, engs, tests, hidden] = await Promise.all([
         fetchProjectTypesFromFirestore(),
         fetchBudgetRangesFromFirestore(),
         fetchEngineersFromFirestore(),
+        fetchTestimonialsFromFirestore(),
         fetchHiddenDefaults(),
       ]);
       setDynamicProjectTypes(types);
       setDynamicBudgets(budgets);
       setDynamicEngineers(engs);
+      setDynamicTestimonials(tests);
       setHiddenDefaults(hidden);
     } catch (err) {
       console.warn("Error loading config data:", err);
@@ -784,6 +833,213 @@ export default function AdminDashboardPage() {
     setEditingEngineer((prev) => (prev ? { ...prev, imageUrl: "" } : prev));
     if (editEngFileInputRef.current) {
       editEngFileInputRef.current.value = "";
+    }
+  };
+
+  // ----------------------------------------------------
+  // Handlers for Customer Feedback / Testimonials ("What Families Say")
+  // ----------------------------------------------------
+  const handleCreateTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTestimonial.clientName.trim() || !newTestimonial.quote.trim()) return;
+    setSubmittingTestimonial(true);
+
+    const res = await saveTestimonialToFirestore({
+      clientName: newTestimonial.clientName.trim(),
+      homeType: newTestimonial.homeType.trim() || "Residential Villa",
+      city: newTestimonial.city.trim() || "Tenkasi, Tamil Nadu",
+      year: newTestimonial.year.trim() || new Date().getFullYear().toString(),
+      quote: newTestimonial.quote.trim(),
+      rating: newTestimonial.rating || 5,
+      avatarUrl: testImageBase64 || newTestimonial.avatarUrl || "",
+    });
+
+    setSubmittingTestimonial(false);
+    if (res.success) {
+      setIsAddTestModalOpen(false);
+      setNewTestimonial({
+        clientName: "",
+        homeType: "Courtyard Heritage Villa (5,400 sq.ft.)",
+        city: "Tenkasi, Tamil Nadu",
+        year: new Date().getFullYear().toString(),
+        quote: "",
+        rating: 5,
+        avatarUrl: "",
+      });
+      setTestImageBase64("");
+      setTestImageSize("");
+      if (testFileInputRef.current) {
+        testFileInputRef.current.value = "";
+      }
+      loadConfigData();
+    } else {
+      alert("Failed to save customer review to Firestore.");
+    }
+  };
+
+  const handleDeleteTestimonial = async (id: string) => {
+    if (window.confirm("Permanently delete this customer review from Firebase?")) {
+      const ok = await deleteTestimonialFromFirestore(id);
+      if (ok) {
+        loadConfigData();
+      } else {
+        alert("Failed to delete review.");
+      }
+    }
+  };
+
+  const handleRemoveDefaultTestimonial = async (clientNameOrKey: string) => {
+    if (window.confirm(`Remove review by "${clientNameOrKey}" from public view? You can restore it anytime.`)) {
+      const current = hiddenDefaults.hiddenTestimonials || [];
+      const newHidden = Array.from(new Set([...current, clientNameOrKey]));
+      await saveHiddenDefaults({ hiddenTestimonials: newHidden });
+      loadConfigData();
+    }
+  };
+
+  const handleRestoreDefaultTestimonials = async () => {
+    if (window.confirm("Restore all default homeowner reviews?")) {
+      await saveHiddenDefaults({ hiddenTestimonials: [] });
+      loadConfigData();
+    }
+  };
+
+  const handleOpenEditTestimonial = (item: DynamicTestimonial) => {
+    setEditingTestimonial({
+      id: item.id,
+      clientName: item.clientName,
+      homeType: item.homeType,
+      city: item.city,
+      year: item.year,
+      quote: item.quote,
+      rating: item.rating ?? 5,
+      avatarUrl: item.avatarUrl || "",
+      isDefault: false,
+    });
+    setEditTestImageBase64(item.avatarUrl || "");
+    setEditTestImageSize("");
+    setIsEditTestModalOpen(true);
+  };
+
+  const handleOpenEditDefaultTestimonial = (item: {
+    clientName: string;
+    homeType: string;
+    city: string;
+    year: string;
+    quote: string;
+  }) => {
+    setEditingTestimonial({
+      defaultId: item.clientName,
+      clientName: item.clientName,
+      homeType: item.homeType,
+      city: item.city,
+      year: item.year,
+      quote: item.quote,
+      rating: 5,
+      avatarUrl: "",
+      isDefault: true,
+    });
+    setEditTestImageBase64("");
+    setEditTestImageSize("");
+    setIsEditTestModalOpen(true);
+  };
+
+  const handleUpdateTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTestimonial || !editingTestimonial.clientName.trim() || !editingTestimonial.quote.trim()) return;
+    setSubmittingEditTest(true);
+
+    const payload = {
+      clientName: editingTestimonial.clientName.trim(),
+      homeType: editingTestimonial.homeType.trim(),
+      city: editingTestimonial.city.trim(),
+      year: editingTestimonial.year.trim() || new Date().getFullYear().toString(),
+      quote: editingTestimonial.quote.trim(),
+      rating: editingTestimonial.rating || 5,
+      avatarUrl: editTestImageBase64 || editingTestimonial.avatarUrl || "",
+    };
+
+    if (editingTestimonial.isDefault && editingTestimonial.defaultId) {
+      const res = await saveTestimonialToFirestore(payload);
+      if (res.success) {
+        const current = hiddenDefaults.hiddenTestimonials || [];
+        const newHidden = Array.from(new Set([...current, editingTestimonial.defaultId]));
+        await saveHiddenDefaults({ hiddenTestimonials: newHidden });
+        setIsEditTestModalOpen(false);
+        setEditingTestimonial(null);
+        setEditTestImageBase64("");
+        loadConfigData();
+      } else {
+        alert("Failed to save customized review.");
+      }
+    } else if (editingTestimonial.id) {
+      const ok = await updateTestimonialInFirestore(editingTestimonial.id, payload);
+      if (ok) {
+        setIsEditTestModalOpen(false);
+        setEditingTestimonial(null);
+        setEditTestImageBase64("");
+        loadConfigData();
+      } else {
+        alert("Failed to update review.");
+      }
+    }
+    setSubmittingEditTest(false);
+  };
+
+  // Image Upload Handlers for Testimonials (Base64)
+  const handleTestImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setConvertingTestImage(true);
+      const b64 = await fileToBase64(file, 600, 0.85);
+      setTestImageBase64(b64);
+      const fmt = file.type ? file.type.replace("image/", "").toUpperCase() : "PHOTO";
+      const approxKb = Math.round((b64.length * 3) / 4 / 1024);
+      setTestImageSize(`${fmt} • ${approxKb} KB Base64`);
+      setNewTestimonial((prev) => ({ ...prev, avatarUrl: b64 }));
+    } catch (err) {
+      console.error("Failed to convert image to Base64:", err);
+      alert("Could not process photo file.");
+    } finally {
+      setConvertingTestImage(false);
+    }
+  };
+
+  const handleClearTestImage = () => {
+    setTestImageBase64("");
+    setTestImageSize("");
+    setNewTestimonial((prev) => ({ ...prev, avatarUrl: "" }));
+    if (testFileInputRef.current) {
+      testFileInputRef.current.value = "";
+    }
+  };
+
+  const handleEditTestImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setConvertingEditTestImage(true);
+      const b64 = await fileToBase64(file, 600, 0.85);
+      setEditTestImageBase64(b64);
+      const fmt = file.type ? file.type.replace("image/", "").toUpperCase() : "PHOTO";
+      const approxKb = Math.round((b64.length * 3) / 4 / 1024);
+      setEditTestImageSize(`${fmt} • ${approxKb} KB Base64`);
+      setEditingTestimonial((prev) => (prev ? { ...prev, avatarUrl: b64 } : prev));
+    } catch (err) {
+      console.error("Failed to convert photo to Base64:", err);
+      alert("Could not process photo file.");
+    } finally {
+      setConvertingEditTestImage(false);
+    }
+  };
+
+  const handleClearEditTestImage = () => {
+    setEditTestImageBase64("");
+    setEditTestImageSize("");
+    setEditingTestimonial((prev) => (prev ? { ...prev, avatarUrl: "" } : prev));
+    if (editTestFileInputRef.current) {
+      editTestFileInputRef.current.value = "";
     }
   };
 
@@ -1920,6 +2176,19 @@ export default function AdminDashboardPage() {
                   <HardHat className="w-3.5 h-3.5 inline mr-1 text-primary" />
                   Engineers &amp; Mesthris ({dynamicEngineers.length + 3})
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConfigSubTab("testimonials")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    configSubTab === "testimonials"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <MessageSquareQuote className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
+                  What Families Say ({dynamicTestimonials.length + TESTIMONIALS.length})
+                </button>
               </div>
             </div>
 
@@ -2444,6 +2713,209 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 4: CUSTOMER FEEDBACK & FAMILY TESTIMONIALS */}
+            {configSubTab === "testimonials" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif text-lg font-normal text-foreground">
+                      Customer Feedback &amp; Reviews (&ldquo;What Families Say&rdquo;)
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Homeowner feedback, family reflections, and quotes displayed in the homepage &ldquo;What Families Say&rdquo; section.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setIsAddTestModalOpen(true)}
+                    size="sm"
+                    className="text-xs uppercase tracking-wider"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <span>Add Review / Feedback</span>
+                  </Button>
+                </div>
+
+                {hiddenDefaults.hiddenTestimonials && hiddenDefaults.hiddenTestimonials.length > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                    <span className="text-muted-foreground">
+                      {hiddenDefaults.hiddenTestimonials.length} default homeowner review(s) currently hidden from public view.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRestoreDefaultTestimonials}
+                      className="text-xs h-7"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Restore Default Reviews
+                    </Button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Dynamic Firestore Customer Feedback */}
+                  {dynamicTestimonials.map((t) => (
+                    <div
+                      key={t.id}
+                      className="p-6 bg-card border border-primary/40 rounded-xl space-y-4 shadow-xs flex flex-col justify-between"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-secondary text-primary flex items-center justify-center font-serif text-sm border border-border shrink-0">
+                              {t.avatarUrl ? (
+                                <Image
+                                  src={t.avatarUrl}
+                                  alt={t.clientName}
+                                  fill
+                                  unoptimized
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <span>
+                                  {t.clientName
+                                    .split(" ")
+                                    .filter(Boolean)
+                                    .slice(0, 2)
+                                    .map((w) => w[0]?.toUpperCase())
+                                    .join("") || "CR"}
+                                </span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-serif text-base font-normal text-foreground truncate">
+                                {t.clientName}
+                              </h4>
+                              <p className="text-xs font-semibold text-primary truncate">
+                                {t.homeType}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] text-primary border-primary/30 shrink-0">
+                            Custom Review
+                          </Badge>
+                        </div>
+
+                        {/* Star Rating */}
+                        <div className="flex items-center gap-1 text-amber-500">
+                          {Array.from({ length: t.rating || 5 }).map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                          ))}
+                        </div>
+
+                        {/* Quote excerpt */}
+                        <p className="text-xs italic text-foreground/85 leading-relaxed bg-secondary/30 p-3 rounded-lg border border-border/40">
+                          &ldquo;{t.quote}&rdquo;
+                        </p>
+
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 font-mono">
+                          <span>{t.city}</span>
+                          <span>{t.year}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditTestimonial(t)}
+                          className="text-xs h-8 text-foreground hover:bg-secondary/80"
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1 text-primary" />
+                          <span>Edit</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => t.id && handleDeleteTestimonial(t.id)}
+                          className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          <span>Remove</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Built-in Default Reviews (Editable & Removable) */}
+                  {TESTIMONIALS.filter(
+                    (t) => !(hiddenDefaults.hiddenTestimonials || []).includes(t.clientName)
+                  ).map((t, i) => (
+                    <div
+                      key={i}
+                      className="p-6 bg-card border border-border rounded-xl space-y-4 shadow-xs flex flex-col justify-between opacity-95"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-secondary text-primary flex items-center justify-center font-serif text-sm border border-border shrink-0">
+                              {t.clientName
+                                .split(" ")
+                                .filter(Boolean)
+                                .slice(0, 2)
+                                .map((w) => w[0]?.toUpperCase())
+                                .join("") || "FB"}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-serif text-base font-normal text-foreground truncate">
+                                {t.clientName}
+                              </h4>
+                              <p className="text-xs font-semibold text-primary truncate">
+                                {t.homeType}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                            Default
+                          </span>
+                        </div>
+
+                        {/* 5 Stars */}
+                        <div className="flex items-center gap-1 text-amber-500">
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <Star key={idx} className="w-3.5 h-3.5 fill-current" />
+                          ))}
+                        </div>
+
+                        {/* Quote excerpt */}
+                        <p className="text-xs italic text-foreground/80 leading-relaxed bg-secondary/30 p-3 rounded-lg border border-border/40">
+                          &ldquo;{t.quote}&rdquo;
+                        </p>
+
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 font-mono">
+                          <span>{t.city}</span>
+                          <span>{t.year}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditDefaultTestimonial(t)}
+                          className="text-xs h-8 text-foreground hover:bg-secondary/80"
+                          title="Edit / Customize this review"
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1 text-primary" />
+                          <span>Edit</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveDefaultTestimonial(t.clientName)}
+                          className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                          title="Remove this review from public view"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          <span>Remove</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -3462,6 +3934,453 @@ export default function AdminDashboardPage() {
                   {convertingEditEngImage
                     ? "Converting..."
                     : submittingEditEng
+                    ? "Saving Changes..."
+                    : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* ADD CUSTOMER TESTIMONIAL MODAL */}
+      {/* ==================================================== */}
+      {isAddTestModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
+                  Customer Voice &amp; Social Proof
+                </span>
+                <h3 className="font-serif text-xl font-normal text-foreground">
+                  Add Homeowner Feedback (&ldquo;What Families Say&rdquo;)
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsAddTestModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTestimonial} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Client / Family Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dr. Arvind & Maya Nambiar"
+                    value={newTestimonial.clientName}
+                    onChange={(e) =>
+                      setNewTestimonial({ ...newTestimonial, clientName: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Home / Project Type *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Courtyard Heritage Villa (5,400 sq.ft.)"
+                    value={newTestimonial.homeType}
+                    onChange={(e) =>
+                      setNewTestimonial({ ...newTestimonial, homeType: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    City &amp; State *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Tenkasi, Tamil Nadu"
+                    value={newTestimonial.city}
+                    onChange={(e) =>
+                      setNewTestimonial({ ...newTestimonial, city: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Completion Year *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 2025"
+                    value={newTestimonial.year}
+                    onChange={(e) =>
+                      setNewTestimonial({ ...newTestimonial, year: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Star Rating (1 - 5)
+                  </label>
+                  <select
+                    value={newTestimonial.rating}
+                    onChange={(e) =>
+                      setNewTestimonial({ ...newTestimonial, rating: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value={5}>⭐⭐⭐⭐⭐ (5 Stars)</option>
+                    <option value={4}>⭐⭐⭐⭐ (4 Stars)</option>
+                    <option value={3}>⭐⭐⭐ (3 Stars)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  Homeowner Quote / Feedback *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Share their experience working with ACS Construction, craftsmanship quality, transparency, timeline, and lifestyle after moving in..."
+                  value={newTestimonial.quote}
+                  onChange={(e) =>
+                    setNewTestimonial({ ...newTestimonial, quote: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
+                />
+              </div>
+
+              {/* Photo Upload via Base64 or URL */}
+              <div className="space-y-3 p-4 bg-secondary/30 border border-border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span>Homeowner / Family Photo (Upload as Base64)</span>
+                  </label>
+                  {testImageBase64 && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
+                      Base64 Ready • {testImageSize}
+                    </span>
+                  )}
+                </div>
+
+                {(testImageBase64 || newTestimonial.avatarUrl) && (
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary/40 mx-auto shadow-sm group">
+                    <Image
+                      src={testImageBase64 || newTestimonial.avatarUrl}
+                      alt="Avatar Preview"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleClearTestImage}
+                      className="absolute inset-0 bg-black/60 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <input
+                    ref={testFileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/avif, image/gif, image/*"
+                    disabled={convertingTestImage}
+                    onChange={handleTestImageFileChange}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Upload any photo (PNG, JPEG, WebP, etc.) — converted directly into Base64 for Firebase.
+                  </p>
+                  {convertingTestImage && (
+                    <p className="text-[11px] text-primary animate-pulse">
+                      Converting photo to Base64 and optimizing for Firebase...
+                    </p>
+                  )}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
+                    <span className="shrink-0">or Photo URL:</span>
+                    <input
+                      type="text"
+                      placeholder="https://... or /images/clients/family.jpg"
+                      value={newTestimonial.avatarUrl.startsWith("data:") ? "" : newTestimonial.avatarUrl}
+                      onChange={(e) => {
+                        setTestImageBase64("");
+                        setTestImageSize("");
+                        setNewTestimonial({ ...newTestimonial, avatarUrl: e.target.value });
+                      }}
+                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddTestModalOpen(false)}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingTestimonial || convertingTestImage}
+                  className="text-xs h-9 uppercase tracking-wider"
+                >
+                  {convertingTestImage
+                    ? "Converting..."
+                    : submittingTestimonial
+                    ? "Saving Review..."
+                    : "Publish Review to Live Site"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* EDIT CUSTOMER TESTIMONIAL MODAL */}
+      {/* ==================================================== */}
+      {isEditTestModalOpen && editingTestimonial && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
+                  {editingTestimonial.isDefault ? "Customize Built-in Review" : "Edit Customer Review"}
+                </span>
+                <h3 className="font-serif text-xl font-normal text-foreground">
+                  Update Homeowner Feedback
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditTestModalOpen(false);
+                  setEditingTestimonial(null);
+                }}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateTestimonial} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Client / Family Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTestimonial.clientName}
+                    onChange={(e) =>
+                      setEditingTestimonial({ ...editingTestimonial, clientName: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Home / Project Type *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTestimonial.homeType}
+                    onChange={(e) =>
+                      setEditingTestimonial({ ...editingTestimonial, homeType: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    City &amp; State *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTestimonial.city}
+                    onChange={(e) =>
+                      setEditingTestimonial({ ...editingTestimonial, city: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Completion Year *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTestimonial.year}
+                    onChange={(e) =>
+                      setEditingTestimonial({ ...editingTestimonial, year: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Star Rating (1 - 5)
+                  </label>
+                  <select
+                    value={editingTestimonial.rating || 5}
+                    onChange={(e) =>
+                      setEditingTestimonial({
+                        ...editingTestimonial,
+                        rating: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value={5}>⭐⭐⭐⭐⭐ (5 Stars)</option>
+                    <option value={4}>⭐⭐⭐⭐ (4 Stars)</option>
+                    <option value={3}>⭐⭐⭐ (3 Stars)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  Homeowner Quote / Feedback *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={editingTestimonial.quote}
+                  onChange={(e) =>
+                    setEditingTestimonial({ ...editingTestimonial, quote: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
+                />
+              </div>
+
+              {/* Photo Upload via Base64 or URL */}
+              <div className="space-y-3 p-4 bg-secondary/30 border border-border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span>Homeowner / Family Photo (Upload as Base64)</span>
+                  </label>
+                  {editTestImageBase64 && editTestImageSize && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
+                      Base64 Ready • {editTestImageSize}
+                    </span>
+                  )}
+                </div>
+
+                {(editTestImageBase64 || editingTestimonial.avatarUrl) && (
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary/40 mx-auto shadow-sm group">
+                    <Image
+                      src={editTestImageBase64 || editingTestimonial.avatarUrl}
+                      alt="Avatar Preview"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleClearEditTestImage}
+                      className="absolute inset-0 bg-black/60 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <input
+                    ref={editTestFileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/avif, image/gif, image/*"
+                    disabled={convertingEditTestImage}
+                    onChange={handleEditTestImageFileChange}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Upload any photo (PNG, JPEG, WebP, etc.) — converted directly into Base64 for Firebase.
+                  </p>
+                  {convertingEditTestImage && (
+                    <p className="text-[11px] text-primary animate-pulse">
+                      Converting photo to Base64 and optimizing for Firebase...
+                    </p>
+                  )}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
+                    <span className="shrink-0">or Photo URL:</span>
+                    <input
+                      type="text"
+                      placeholder="https://... or /images/clients/family.jpg"
+                      value={
+                        editingTestimonial.avatarUrl.startsWith("data:")
+                          ? ""
+                          : editingTestimonial.avatarUrl
+                      }
+                      onChange={(e) => {
+                        setEditTestImageBase64("");
+                        setEditTestImageSize("");
+                        setEditingTestimonial({
+                          ...editingTestimonial,
+                          avatarUrl: e.target.value,
+                        });
+                      }}
+                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditTestModalOpen(false);
+                    setEditingTestimonial(null);
+                  }}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingEditTest || convertingEditTestImage}
+                  className="text-xs h-9 uppercase tracking-wider"
+                >
+                  {convertingEditTestImage
+                    ? "Converting..."
+                    : submittingEditTest
                     ? "Saving Changes..."
                     : "Save Changes"}
                 </Button>
