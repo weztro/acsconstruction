@@ -16,37 +16,55 @@ import {
 import { getAuth, type Auth } from "firebase/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from "firebase/storage";
 
+import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDor1_DWKz5nYDH_1TeqY8h06fYZuU_TIE",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "acs-construction-web.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "acs-construction-web",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "acs-construction-web.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "160112151298",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:160112151298:web:64905f824c8869e597501b",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-8X70JRMFN5",
 };
 
-export const isFirebaseConfigured = Boolean(
-  process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
-  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-);
+export const isFirebaseConfigured = true;
 
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 let auth: Auth | undefined;
 let storage: FirebaseStorage | undefined;
+let analytics: Analytics | undefined;
 
-if (typeof window !== "undefined" || isFirebaseConfigured) {
+if (typeof window !== "undefined") {
+  try {
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    storage = getStorage(app);
+
+    // Initialize Analytics if supported in browser environment
+    isSupported().then((supported) => {
+      if (supported && app) {
+        analytics = getAnalytics(app);
+      }
+    });
+  } catch (error) {
+    console.warn("Firebase initialization encountered error:", error);
+  }
+} else {
+  // Server-side initialization
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
     storage = getStorage(app);
   } catch (error) {
-    console.warn("Firebase initialization skipped or encountered error:", error);
+    console.warn("Firebase server initialization encountered error:", error);
   }
 }
 
-export { app, db, auth, storage };
+export { app, db, auth, storage, analytics };
 
 export interface Lead {
   id?: string;
