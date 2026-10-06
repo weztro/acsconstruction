@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { contactFormSchema, type ContactFormData } from "@/lib/validations";
-import { PROJECT_TYPES, BUDGET_RANGES } from "@/lib/constants";
+import { PROJECT_TYPES, BUDGET_RANGES, BRAND } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ import {
 import { Send, CheckCircle2, Loader2, MessageSquare, Phone } from "lucide-react";
 
 function buildWhatsAppUrl(data: ContactFormData): string {
-  const whatsappNumber = "916382995103";
+  const whatsappNumber = BRAND.whatsappNumber.replace(/[^0-9]/g, "");
   const message = [
     `*🏛️ New Construction Enquiry — ACS Construction*`,
     `━━━━━━━━━━━━━━━━━━━━`,
@@ -145,7 +145,7 @@ export function ContactForm() {
               className="flex items-center justify-center gap-2"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Chat on WhatsApp (+91 6382995103)</span>
+              <span>Chat on WhatsApp (+{BRAND.whatsappNumber})</span>
             </a>
           </Button>
         </div>
@@ -158,9 +158,9 @@ export function ContactForm() {
             size="sm"
             className="text-xs h-9 border-border"
           >
-            <a href="tel:+919486943652" className="flex items-center gap-1.5">
+            <a href={`tel:${BRAND.phone.replace(/[^0-9+]/g, "")}`} className="flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-primary" />
-              <span>Direct Call (+91 94869 43652)</span>
+              <span>Direct Call ({BRAND.phone})</span>
             </a>
           </Button>
 
