@@ -10,8 +10,11 @@ import {
   saveProjectToFirestore,
   deleteProjectFromFirestore,
   fileToBase64,
+  fetchSiteVisitsFromFirestore,
+  logSiteVisit,
   type Lead,
   type ProjectItem,
+  type SiteVisit,
 } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,14 +35,56 @@ import {
   Clock,
   Upload,
   Image as ImageIcon,
+  Activity,
+  Eye,
+  Globe,
+  Smartphone,
+  Monitor,
+  Tablet,
+  TrendingUp,
+  RefreshCw,
+  BarChart3,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
+
+function formatVisitTime(ts: unknown): string {
+  if (!ts) return "Just now";
+  let date: Date;
+  if (
+    typeof ts === "object" &&
+    ts !== null &&
+    "toDate" in ts &&
+    typeof (ts as { toDate: () => Date }).toDate === "function"
+  ) {
+    date = (ts as { toDate: () => Date }).toDate();
+  } else if (typeof ts === "object" && ts !== null && "seconds" in ts) {
+    date = new Date((ts as { seconds: number }).seconds * 1000);
+  } else if (typeof ts === "string" || typeof ts === "number") {
+    date = new Date(ts);
+  } else {
+    date = new Date();
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return date.toLocaleDateString("en-IN", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, logout, isMock } = useAuth();
 
-  const [activeTab, setActiveTab] = React.useState<"leads" | "projects">("leads");
+  const [activeTab, setActiveTab] = React.useState<"leads" | "projects" | "visitors">("leads");
 
   // Leads State
   const [leads, setLeads] = React.useState<Lead[]>([]);
@@ -51,6 +96,10 @@ export default function AdminDashboardPage() {
   const [projects, setProjects] = React.useState<ProjectItem[]>([]);
   const [projectsLoading, setProjectsLoading] = React.useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+
+  // Site Visitors State
+  const [visits, setVisits] = React.useState<SiteVisit[]>([]);
+  const [visitsLoading, setVisitsLoading] = React.useState(true);
 
   // New Project Form State
   const [newProject, setNewProject] = React.useState({
@@ -93,12 +142,192 @@ export default function AdminDashboardPage() {
     setProjectsLoading(false);
   }, []);
 
+  // Load Site Visits
+  const loadVisits = React.useCallback(async () => {
+    setVisitsLoading(true);
+    const data = await fetchSiteVisitsFromFirestore(200);
+    setVisits(data);
+    setVisitsLoading(false);
+  }, []);
+
   React.useEffect(() => {
     if (user) {
       loadLeads();
       loadProjects();
+      loadVisits();
     }
-  }, [user, loadLeads, loadProjects]);
+  }, [user, loadLeads, loadProjects, loadVisits]);
+
+  // Simulate Sample Visits for testing
+  const handleSimulateVisits = async () => {
+    const samplePaths = ["/", "/projects", "/contact", "/services", "/about", "/process"];
+    const sampleDevices: Array<"Mobile" | "Desktop" | "Tablet"> = [
+      "Mobile",
+      "Mobile",
+      "Desktop",
+      "Desktop",
+      "Mobile",
+      "Tablet",
+    ];
+    const sampleBrowsers = [
+      "Google Chrome",
+      "Apple Safari",
+      "Samsung Internet",
+      "Mozilla Firefox",
+      "Microsoft Edge",
+    ];
+    const sampleReferrers = [
+      "Direct / Bookmark",
+      "WhatsApp",
+      "Google Search",
+      "Instagram",
+      "Facebook",
+    ];
+    const sampleOS = ["Android", "iOS", "Windows", "macOS"];
+
+    setVisitsLoading(true);
+    for (let i = 0; i < 5; i++) {
+      const p = samplePaths[Math.floor(Math.random() * samplePaths.length)];
+      const dev = sampleDevices[Math.floor(Math.random() * sampleDevices.length)];
+      const br = sampleBrowsers[Math.floor(Math.random() * sampleBrowsers.length)];
+      const ref = sampleReferrers[Math.floor(Math.random() * sampleReferrers.length)];
+      const os = sampleOS[Math.floor(Math.random() * sampleOS.length)];
+      const sid = "sim_" + Math.random().toString(36).substring(2, 8);
+      await logSiteVisit({
+        path: p,
+        referrer: ref,
+        device: dev,
+        browser: br,
+        os,
+        sessionId: sid,
+      });
+    }
+    await loadVisits();
+  };
+
+  // Analytics Computations
+  const totalVisits = visits.length;
+  const uniqueSessions = React.useMemo(() => {
+    return new Set(visits.map((v) => v.sessionId)).size;
+  }, [visits]);
+
+  const todayVisits = React.useMemo(() => {
+    const todayStr = new Date().toDateString();
+    return visits.filter((v) => {
+      if (!v.createdAt) return true;
+      let d: Date;
+      if (
+        typeof v.createdAt === "object" &&
+        v.createdAt !== null &&
+        "toDate" in v.createdAt &&
+        typeof (v.createdAt as { toDate: () => Date }).toDate === "function"
+      ) {
+        d = (v.createdAt as { toDate: () => Date }).toDate();
+      } else if (typeof v.createdAt === "object" && v.createdAt !== null && "seconds" in v.createdAt) {
+        d = new Date((v.createdAt as { seconds: number }).seconds * 1000);
+      } else {
+        d = new Date(v.createdAt as string | number);
+      }
+      return d.toDateString() === todayStr;
+    }).length;
+  }, [visits]);
+
+  const deviceDistribution = React.useMemo(() => {
+    const mobile = visits.filter((v) => v.device === "Mobile").length;
+    const desktop = visits.filter((v) => v.device === "Desktop").length;
+    const tablet = visits.filter((v) => v.device === "Tablet").length;
+    const total = totalVisits || 1;
+    return {
+      mobile,
+      desktop,
+      tablet,
+      mobilePct: Math.round((mobile / total) * 100),
+      desktopPct: Math.round((desktop / total) * 100),
+      tabletPct: Math.round((tablet / total) * 100),
+    };
+  }, [visits, totalVisits]);
+
+  const topPages = React.useMemo(() => {
+    const pageMap: Record<string, number> = {};
+    const friendlyNames: Record<string, string> = {
+      "/": "Homepage (Hero & Intro)",
+      "/projects": "Architectural Portfolio",
+      "/contact": "Consultation & Contact",
+      "/services": "Services & Estimates",
+      "/about": "Atelier Story & Tenkasi Studio",
+      "/process": "6-Phase Construction Process",
+    };
+    visits.forEach((v) => {
+      const p = v.path || "/";
+      pageMap[p] = (pageMap[p] || 0) + 1;
+    });
+
+    return Object.entries(pageMap)
+      .map(([path, count]) => ({
+        path,
+        name: friendlyNames[path] || path,
+        count,
+        pct: totalVisits > 0 ? Math.round((count / totalVisits) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [visits, totalVisits]);
+
+  const topReferrers = React.useMemo(() => {
+    const refMap: Record<string, number> = {};
+    visits.forEach((v) => {
+      const r = v.referrer || "Direct / Bookmark";
+      refMap[r] = (refMap[r] || 0) + 1;
+    });
+
+    return Object.entries(refMap)
+      .map(([source, count]) => ({
+        source,
+        count,
+        pct: totalVisits > 0 ? Math.round((count / totalVisits) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [visits, totalVisits]);
+
+  const trendDays = React.useMemo(() => {
+    const days: { label: string; dateStr: string; count: number }[] = [];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const targetDate = new Date();
+      targetDate.setDate(now.getDate() - i);
+      const dateStr = targetDate.toDateString();
+      const label =
+        i === 0
+          ? "Today"
+          : targetDate.toLocaleDateString("en-IN", { weekday: "short" });
+
+      const count = visits.filter((v) => {
+        if (!v.createdAt) return i === 0;
+        let d: Date;
+        if (
+          typeof v.createdAt === "object" &&
+          v.createdAt !== null &&
+          "toDate" in v.createdAt &&
+          typeof (v.createdAt as { toDate: () => Date }).toDate === "function"
+        ) {
+          d = (v.createdAt as { toDate: () => Date }).toDate();
+        } else if (typeof v.createdAt === "object" && v.createdAt !== null && "seconds" in v.createdAt) {
+          d = new Date((v.createdAt as { seconds: number }).seconds * 1000);
+        } else {
+          d = new Date(v.createdAt as string | number);
+        }
+        return d.toDateString() === dateStr;
+      }).length;
+
+      days.push({ label, dateStr, count });
+    }
+
+    return days;
+  }, [visits]);
+
+  const maxDailyCount = Math.max(...trendDays.map((d) => d.count), 1);
 
   // Handle Image selection & Base64 conversion
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -289,6 +518,25 @@ export default function AdminDashboardPage() {
             <span>Projects & Gallery</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
               {projects.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("visitors")}
+            className={`py-3.5 flex items-center gap-2 border-b-2 transition-colors ${
+              activeTab === "visitors"
+                ? "border-primary text-primary font-semibold"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Site Visitors</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
+              {visits.length}
+            </span>
+            <span className="relative flex h-2 w-2 ml-0.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
           </button>
         </div>
@@ -567,6 +815,408 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================================================== */}
+        {/* SITE VISITORS & ANALYTICS TAB CONTENT */}
+        {/* ==================================================== */}
+        {activeTab === "visitors" && (
+          <div className="space-y-8">
+            {/* Action Bar & Live Status */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-card border border-border rounded-xl shadow-xs">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono">
+                    Real-Time Visitor Telemetry
+                  </span>
+                </div>
+                <h2 className="font-serif text-xl sm:text-2xl font-normal text-foreground mt-0.5">
+                  Site Traffic & Audience Analytics
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Live session telemetry from prospective homebuilders browsing your Tenkasi architecture studio website.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <Button
+                  onClick={handleSimulateVisits}
+                  variant="outline"
+                  size="sm"
+                  disabled={visitsLoading}
+                  className="text-xs h-8 text-primary border-primary/30 hover:bg-primary/5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1 text-primary" />
+                  <span>Simulate Traffic</span>
+                </Button>
+
+                <Button
+                  onClick={loadVisits}
+                  variant="outline"
+                  size="sm"
+                  disabled={visitsLoading}
+                  className="text-xs h-8"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${visitsLoading ? "animate-spin" : ""}`} />
+                  <span>Refresh</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* KPI Stat Cards (4 cards) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {/* Total Visits */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-2">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-xs font-medium">Total Pageviews</span>
+                  <Eye className="w-4 h-4 text-primary" />
+                </div>
+                <div className="font-serif text-2xl sm:text-3xl text-foreground font-normal">
+                  {totalVisits}
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-emerald-500" />
+                  <span>Logged in Firestore</span>
+                </div>
+              </div>
+
+              {/* Unique Visitors */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-2">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-xs font-medium">Unique Sessions</span>
+                  <Users className="w-4 h-4 text-[#B86F55]" />
+                </div>
+                <div className="font-serif text-2xl sm:text-3xl text-foreground font-normal">
+                  {uniqueSessions}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Distinct browsing sessions
+                </div>
+              </div>
+
+              {/* Today's Visits */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-2">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-xs font-medium">Today&apos;s Traffic</span>
+                  <Activity className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div className="font-serif text-2xl sm:text-3xl text-foreground font-normal">
+                  {todayVisits}
+                </div>
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  {todayVisits > 0 ? `${todayVisits} hits today` : "Waiting for today's visitors"}
+                </div>
+              </div>
+
+              {/* Mobile Traffic Share */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-2">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-xs font-medium">Mobile Traffic</span>
+                  <Smartphone className="w-4 h-4 text-primary" />
+                </div>
+                <div className="font-serif text-2xl sm:text-3xl text-foreground font-normal">
+                  {totalVisits > 0 ? `${deviceDistribution.mobilePct}%` : "0%"}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {deviceDistribution.mobile} mobile vs {deviceDistribution.desktop} desktop
+                </div>
+              </div>
+            </div>
+
+            {/* 7-Day Traffic Trend Bar Chart */}
+            <div className="bg-card border border-border rounded-xl p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-serif text-base font-normal text-foreground">
+                    Last 7 Days Traffic Trend
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Daily distribution of visitor activity
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+                  <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                  <span>Peak: {maxDailyCount} visits</span>
+                </div>
+              </div>
+
+              <div className="pt-6 pb-2">
+                <div className="grid grid-cols-7 gap-2 sm:gap-4 h-40 items-end border-b border-border/60 pb-2">
+                  {trendDays.map((day, idx) => {
+                    const heightPct = Math.max(8, Math.round((day.count / maxDailyCount) * 100));
+                    const isTodayBar = idx === 6;
+                    return (
+                      <div key={idx} className="flex flex-col items-center h-full justify-end group">
+                        {/* Hover Count Badge */}
+                        <span className="text-[10px] font-mono mb-1.5 transition-opacity opacity-70 group-hover:opacity-100 font-semibold text-foreground">
+                          {day.count}
+                        </span>
+
+                        {/* Bar */}
+                        <div
+                          className={`w-full max-w-[44px] rounded-t-md transition-all duration-500 ${
+                            isTodayBar
+                              ? "bg-primary shadow-xs"
+                              : day.count > 0
+                              ? "bg-primary/50 hover:bg-primary/70"
+                              : "bg-secondary/60"
+                          }`}
+                          style={{ height: `${heightPct}%` }}
+                        />
+
+                        {/* Day Label */}
+                        <span
+                          className={`text-[11px] font-mono mt-2 ${
+                            isTodayBar ? "text-primary font-bold" : "text-muted-foreground"
+                          }`}
+                        >
+                          {day.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Middle Section: Top Pages & Device/Sources */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Top Visited Pages */}
+              <div className="bg-card border border-border rounded-xl p-6 shadow-xs space-y-4">
+                <div>
+                  <h3 className="font-serif text-base font-normal text-foreground">
+                    Most Visited Pages
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Where visitors spend the most time on your website
+                  </p>
+                </div>
+
+                {topPages.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-6 text-center">
+                    No pageview data recorded yet.
+                  </p>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    {topPages.map((page, idx) => (
+                      <div key={idx} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 truncate pr-2">
+                            <span className="font-mono text-[10px] text-muted-foreground w-4">
+                              #{idx + 1}
+                            </span>
+                            <span className="font-medium text-foreground truncate">
+                              {page.name}
+                            </span>
+                            <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                              {page.path}
+                            </span>
+                          </div>
+                          <span className="font-mono text-[11px] font-semibold text-foreground shrink-0">
+                            {page.count} views ({page.pct}%)
+                          </span>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-500"
+                            style={{ width: `${page.pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Devices & Acquisition Sources */}
+              <div className="bg-card border border-border rounded-xl p-6 shadow-xs space-y-6">
+                {/* Devices */}
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="font-serif text-base font-normal text-foreground">
+                      Device Platforms
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Mobile vs Desktop visitor distribution
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 text-foreground">
+                          <Smartphone className="w-3.5 h-3.5 text-primary" />
+                          <span>Mobile Phones</span>
+                        </span>
+                        <span className="font-mono text-muted-foreground">
+                          {deviceDistribution.mobile} ({deviceDistribution.mobilePct}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full"
+                          style={{ width: `${deviceDistribution.mobilePct}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 text-foreground">
+                          <Monitor className="w-3.5 h-3.5 text-blue-500" />
+                          <span>Desktop Computers</span>
+                        </span>
+                        <span className="font-mono text-muted-foreground">
+                          {deviceDistribution.desktop} ({deviceDistribution.desktopPct}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full"
+                          style={{ width: `${deviceDistribution.desktopPct}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 text-foreground">
+                          <Tablet className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Tablets / iPads</span>
+                        </span>
+                        <span className="font-mono text-muted-foreground">
+                          {deviceDistribution.tablet} ({deviceDistribution.tabletPct}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-amber-500 rounded-full"
+                          style={{ width: `${deviceDistribution.tabletPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Traffic Acquisition Sources */}
+                <div className="space-y-3 pt-3 border-t border-border">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Traffic Sources & Referrers
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {topReferrers.map((ref, idx) => (
+                      <div
+                        key={idx}
+                        className="px-2.5 py-1.5 rounded-md bg-secondary/50 border border-border text-xs flex items-center gap-2"
+                      >
+                        <Globe className="w-3 h-3 text-primary" />
+                        <span className="text-foreground font-medium">{ref.source}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground px-1.5 py-0.2 bg-background rounded">
+                          {ref.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row: Live Real-Time Activity Log */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-xs space-y-0">
+              <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-emerald-500" />
+                    <h3 className="font-serif text-base font-normal text-foreground">
+                      Live Real-Time Activity Feed
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Chronological stream of incoming pageviews across devices
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[11px] font-mono w-fit">
+                  Showing latest {visits.slice(0, 30).length} hits
+                </Badge>
+              </div>
+
+              {visitsLoading ? (
+                <div className="py-16 text-center text-xs text-muted-foreground font-mono animate-pulse">
+                  Loading telemetry records from Firestore...
+                </div>
+              ) : visits.length === 0 ? (
+                <div className="py-16 text-center space-y-3 p-6">
+                  <Activity className="w-8 h-8 text-muted-foreground mx-auto" />
+                  <h4 className="font-serif text-base text-foreground">No Visitor Hits Recorded Yet</h4>
+                  <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                    The tracker is active on all public pages. Once prospective clients visit your site, their activity will stream in here live. You can also click &quot;Simulate Traffic&quot; above to generate test hits.
+                  </p>
+                  <Button
+                    onClick={handleSimulateVisits}
+                    size="sm"
+                    className="text-xs uppercase tracking-wider"
+                  >
+                    Simulate Sample Traffic
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-secondary/40 text-[10px] uppercase font-mono tracking-wider text-muted-foreground border-b border-border">
+                      <tr>
+                        <th className="py-3 px-5">Time</th>
+                        <th className="py-3 px-5">Page Visited</th>
+                        <th className="py-3 px-5">Device</th>
+                        <th className="py-3 px-5">Browser & OS</th>
+                        <th className="py-3 px-5">Source</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {visits.slice(0, 30).map((v, i) => (
+                        <tr key={v.id || i} className="hover:bg-secondary/20 transition-colors">
+                          <td className="py-3.5 px-5 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
+                            {formatVisitTime(v.createdAt)}
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <span className="font-mono px-2 py-0.5 rounded bg-secondary text-foreground text-[11px]">
+                              {v.path}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <span className="flex items-center gap-1.5 text-foreground">
+                              {v.device === "Mobile" ? (
+                                <Smartphone className="w-3.5 h-3.5 text-primary" />
+                              ) : v.device === "Tablet" ? (
+                                <Tablet className="w-3.5 h-3.5 text-amber-500" />
+                              ) : (
+                                <Monitor className="w-3.5 h-3.5 text-blue-500" />
+                              )}
+                              <span>{v.device}</span>
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-5 text-muted-foreground whitespace-nowrap">
+                            <span className="text-foreground font-medium">{v.browser}</span>
+                            <span className="mx-1">•</span>
+                            <span>{v.os}</span>
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-secondary/80 text-foreground font-mono">
+                              {v.referrer}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

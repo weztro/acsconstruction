@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { FloatingWhatsApp } from "@/components/ui/floating-whatsapp";
+import { VisitorTracker } from "@/components/analytics/VisitorTracker";
 import { AuthProvider } from "@/context/AuthContext";
 import { BRAND } from "@/lib/constants";
 
@@ -93,6 +94,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <VisitorTracker />
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />

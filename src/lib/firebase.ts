@@ -10,6 +10,7 @@ import {
   doc,
   deleteDoc,
   serverTimestamp,
+  limit,
   type Firestore,
   type Timestamp,
 } from "firebase/firestore";
@@ -262,4 +263,55 @@ export function fileToBase64(file: File, maxDimension = 1200, quality = 0.82): P
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// ----------------------------------------------------
+// Site Visitors Analytics Services
+// ----------------------------------------------------
+
+export interface SiteVisit {
+  id?: string;
+  path: string;
+  referrer: string;
+  device: "Mobile" | "Desktop" | "Tablet";
+  browser: string;
+  os: string;
+  sessionId: string;
+  createdAt?: unknown;
+}
+
+export async function logSiteVisit(
+  visit: Omit<SiteVisit, "id" | "createdAt">
+): Promise<void> {
+  if (!db) return;
+  try {
+    await addDoc(collection(db, "site_visits"), {
+      ...visit,
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // Fail silently so visitor experience is never affected
+    console.debug("Site visit log skipped:", error);
+  }
+}
+
+export async function fetchSiteVisitsFromFirestore(
+  limitCount = 150
+): Promise<SiteVisit[]> {
+  if (!db) return [];
+  try {
+    const q = query(
+      collection(db, "site_visits"),
+      orderBy("createdAt", "desc"),
+      limit(limitCount)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as SiteVisit[];
+  } catch (error) {
+    console.error("Error fetching site visits from Firestore:", error);
+    return [];
+  }
 }
