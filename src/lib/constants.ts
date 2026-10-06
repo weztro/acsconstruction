@@ -24,13 +24,13 @@ export const BRAND: BrandConfig = {
   tagline:
     process.env.NEXT_PUBLIC_BRAND_TAGLINE ||
     "Building Homes. Creating Legacies.",
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  phone: process.env.COMPANY_PHONE || "+91 98450 12890",
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://acsconstruction.vercel.app",
+  phone: process.env.COMPANY_PHONE || "+91 94869 43652",
   email: process.env.COMPANY_EMAIL || "contact@acsconstruction.in",
   address:
     process.env.COMPANY_ADDRESS ||
-    "No. 42, 3rd Main, Koramangala 4th Block, Bengaluru, Karnataka 560034",
-  whatsappNumber: process.env.WHATSAPP_NUMBER || "+919845012890",
+    "No.7/114, Sankarankovil Main Road, Pandiyapuram, Tenkasi, Tamil Nadu 627857",
+  whatsappNumber: process.env.WHATSAPP_NUMBER || "916382995103",
   workingHours: "Monday – Saturday: 9:30 AM – 6:30 PM (IST)",
   socials: {
     instagram:

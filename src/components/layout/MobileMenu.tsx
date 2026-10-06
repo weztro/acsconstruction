@@ -106,7 +106,7 @@ export function MobileMenu() {
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-3.5 w-3.5 text-primary" />
-            <span>Bengaluru • Kochi • Hyderabad</span>
+            <span>Tenkasi • Tamil Nadu</span>
           </div>
         </div>
       </SheetContent>

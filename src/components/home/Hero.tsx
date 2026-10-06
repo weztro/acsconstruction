@@ -20,7 +20,7 @@ export function Hero() {
                 Indian Home Construction & Design
               </Badge>
               <span className="text-xs text-muted-foreground hidden sm:inline font-mono">
-                Bengaluru • Kochi • Hyderabad
+                Tenkasi • Sankarankovil • Tamil Nadu
               </span>
             </div>
 

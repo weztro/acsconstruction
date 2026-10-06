@@ -84,7 +84,7 @@ export default function ContactPage() {
               {/* Direct WhatsApp CTA Button */}
               <div className="pt-2">
                 <a
-                  href={`https://wa.me/${BRAND.whatsappNumber.replace(/[^0-9]/g, "")}?text=Hello%20Sthapati%20Homes,%20I%20would%20like%20to%20discuss%20a%20house%20construction%20project.`}
+                  href={`https://wa.me/${BRAND.whatsappNumber.replace(/[^0-9]/g, "")}?text=Hello%20ACS%20Construction,%20I%20would%20like%20to%20discuss%20a%20house%20construction%20project.`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs uppercase tracking-wider transition-colors"
@@ -115,7 +115,7 @@ export default function ContactPage() {
                 <span>Active Project Locations</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Bengaluru • Mysuru • Kochi • Thrissur • Hyderabad • Chennai • Coimbatore • Pune
+                Tenkasi • Sankarankovil • Tirunelveli • Madurai • Rajapalayam • Tamil Nadu
               </p>
             </div>
           </div>

@@ -7,6 +7,7 @@ import {
   MapPin,
   Clock,
   ArrowUpRight,
+  MessageSquare,
 } from "lucide-react";
 
 export function Footer() {
@@ -156,6 +157,17 @@ export function Footer() {
                   className="hover:text-foreground font-medium text-foreground"
                 >
                   {BRAND.phone}
+                </a>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-500 shrink-0" />
+                <a
+                  href={`https://wa.me/${BRAND.whatsappNumber.replace(/[^0-9]/g, "")}?text=Hello%20ACS%20Construction,%20I%20would%20like%20to%20discuss%20a%20house%20construction%20project.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-600 dark:hover:text-emerald-400 font-medium text-foreground transition-colors"
+                >
+                  WhatsApp: +91 63829 95103
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
