@@ -107,7 +107,8 @@ export function ContactForm() {
   };
 
   if (isSubmitted) {
-    const waUrl = submittedData ? buildWhatsAppUrl(submittedData) : `https://wa.me/916382995103`;
+    const cleanNumber = BRAND.whatsappNumber.replace(/[^0-9]/g, "");
+    const waUrl = submittedData ? buildWhatsAppUrl(submittedData) : `https://wa.me/${cleanNumber}`;
     return (
       <div className="p-8 sm:p-12 bg-card border border-border rounded-xl text-center space-y-6 shadow-xs">
         <div className="w-14 h-14 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
@@ -335,7 +336,7 @@ export function ContactForm() {
       </Button>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        Enquiries are saved to our studio database and forwarded directly to WhatsApp (+91 6382995103) for the fastest response.
+        Enquiries are saved to our studio database and forwarded directly to WhatsApp (+{BRAND.whatsappNumber}) for the fastest response.
       </p>
     </form>
   );

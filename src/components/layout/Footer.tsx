@@ -167,7 +167,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="hover:text-emerald-600 dark:hover:text-emerald-400 font-medium text-foreground transition-colors"
                 >
-                  WhatsApp: +91 63829 95103
+                  WhatsApp: +91 77084 79504
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
