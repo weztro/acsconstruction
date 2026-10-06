@@ -417,7 +417,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Style Image File Handler
+  // Style Image File Handler (PNG, JPEG, WebP, etc. -> Base64)
   const handleTypeImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -425,8 +425,9 @@ export default function AdminDashboardPage() {
       setConvertingTypeImage(true);
       const b64 = await fileToBase64(file, 1200, 0.82);
       setTypeImageBase64(b64);
+      const fmt = file.type ? file.type.replace("image/", "").toUpperCase() : "PHOTO";
       const approxKb = Math.round((b64.length * 3) / 4 / 1024);
-      setTypeImageSize(`${approxKb} KB`);
+      setTypeImageSize(`${fmt} • ${approxKb} KB Base64`);
       setNewType((prev) => ({ ...prev, imageUrl: b64 }));
     } catch (err) {
       console.error("Failed to convert style image to Base64:", err);
@@ -445,7 +446,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Engineer Photo File Handler
+  // Engineer Photo File Handler (PNG, JPEG, WebP, etc. -> Base64)
   const handleEngImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -453,8 +454,9 @@ export default function AdminDashboardPage() {
       setConvertingEngImage(true);
       const b64 = await fileToBase64(file, 800, 0.82);
       setEngImageBase64(b64);
+      const fmt = file.type ? file.type.replace("image/", "").toUpperCase() : "PHOTO";
       const approxKb = Math.round((b64.length * 3) / 4 / 1024);
-      setEngImageSize(`${approxKb} KB`);
+      setEngImageSize(`${fmt} • ${approxKb} KB Base64`);
       setNewEngineer((prev) => ({ ...prev, imageUrl: b64 }));
     } catch (err) {
       console.error("Failed to convert photo to Base64:", err);
@@ -574,8 +576,9 @@ export default function AdminDashboardPage() {
       setConvertingEditTypeImage(true);
       const b64 = await fileToBase64(file, 1200, 0.82);
       setEditTypeImageBase64(b64);
+      const fmt = file.type ? file.type.replace("image/", "").toUpperCase() : "PHOTO";
       const approxKb = Math.round((b64.length * 3) / 4 / 1024);
-      setEditTypeImageSize(`${approxKb} KB`);
+      setEditTypeImageSize(`${fmt} • ${approxKb} KB Base64`);
       setEditingType((prev) => (prev ? { ...prev, imageUrl: b64 } : prev));
     } catch (err) {
       console.error("Failed to convert style image to Base64:", err);
@@ -763,8 +766,9 @@ export default function AdminDashboardPage() {
       setConvertingEditEngImage(true);
       const b64 = await fileToBase64(file, 800, 0.82);
       setEditEngImageBase64(b64);
+      const fmt = file.type ? file.type.replace("image/", "").toUpperCase() : "PHOTO";
       const approxKb = Math.round((b64.length * 3) / 4 / 1024);
-      setEditEngImageSize(`${approxKb} KB`);
+      setEditEngImageSize(`${fmt} • ${approxKb} KB Base64`);
       setEditingEngineer((prev) => (prev ? { ...prev, imageUrl: b64 } : prev));
     } catch (err) {
       console.error("Failed to convert engineer photo to Base64:", err);
@@ -954,18 +958,18 @@ export default function AdminDashboardPage() {
 
   const maxDailyCount = Math.max(...trendDays.map((d) => d.count), 1);
 
-  // Handle Image selection & Base64 conversion
+  // Handle Image selection & Base64 conversion (PNG, JPEG, WebP, etc. -> Base64)
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setConvertingImage(true);
-      // Downsample to max 1200px width/height and compress to 82% quality JPEG
       const b64 = await fileToBase64(file, 1200, 0.82);
       setImageBase64(b64);
+      const fmt = file.type ? file.type.replace("image/", "").toUpperCase() : "PHOTO";
       const approxKb = Math.round((b64.length * 3) / 4 / 1024);
-      setImageFileSize(`${approxKb} KB`);
+      setImageFileSize(`${fmt} • ${approxKb} KB Base64`);
       setNewProject((prev) => ({ ...prev, imageUrl: b64 }));
     } catch (err) {
       console.error("Failed to convert image to Base64:", err);
@@ -2577,14 +2581,17 @@ export default function AdminDashboardPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/avif, image/gif, image/*"
                     disabled={convertingImage}
                     onChange={handleImageFileChange}
                     className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                   />
+                  <p className="text-[10px] text-muted-foreground">
+                    Upload any photo (PNG, JPEG, WebP, etc.) — converted directly into Base64 for Firebase.
+                  </p>
                   {convertingImage && (
                     <p className="text-[11px] text-primary animate-pulse">
-                      Optimizing and converting image to Base64...
+                      Converting photo to Base64 and optimizing for Firebase...
                     </p>
                   )}
                   <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
@@ -2769,14 +2776,17 @@ export default function AdminDashboardPage() {
                   <input
                     ref={typeFileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/avif, image/gif, image/*"
                     disabled={convertingTypeImage}
                     onChange={handleTypeImageFileChange}
                     className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                   />
+                  <p className="text-[10px] text-muted-foreground">
+                    Upload any photo (PNG, JPEG, WebP, etc.) — converted directly into Base64 for Firebase.
+                  </p>
                   {convertingTypeImage && (
                     <p className="text-[11px] text-primary animate-pulse">
-                      Optimizing and converting image to Base64...
+                      Converting photo to Base64 and optimizing for Firebase...
                     </p>
                   )}
                   <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
@@ -2961,14 +2971,17 @@ export default function AdminDashboardPage() {
                   <input
                     ref={engFileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/avif, image/gif, image/*"
                     disabled={convertingEngImage}
                     onChange={handleEngImageFileChange}
                     className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                   />
+                  <p className="text-[10px] text-muted-foreground">
+                    Upload any photo (PNG, JPEG, WebP, etc.) — converted directly into Base64 for Firebase.
+                  </p>
                   {convertingEngImage && (
                     <p className="text-[11px] text-primary animate-pulse">
-                      Optimizing and converting photo to Base64...
+                      Converting photo to Base64 and optimizing for Firebase...
                     </p>
                   )}
                   <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
@@ -3131,14 +3144,17 @@ export default function AdminDashboardPage() {
                   <input
                     ref={editTypeFileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/avif, image/gif, image/*"
                     disabled={convertingEditTypeImage}
                     onChange={handleEditTypeImageFileChange}
                     className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                   />
+                  <p className="text-[10px] text-muted-foreground">
+                    Upload any photo (PNG, JPEG, WebP, etc.) — converted directly into Base64 for Firebase.
+                  </p>
                   {convertingEditTypeImage && (
                     <p className="text-[11px] text-primary animate-pulse">
-                      Optimizing and converting image to Base64...
+                      Converting photo to Base64 and optimizing for Firebase...
                     </p>
                   )}
                   <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
@@ -3396,14 +3412,17 @@ export default function AdminDashboardPage() {
                   <input
                     ref={editEngFileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/webp, image/avif, image/gif, image/*"
                     disabled={convertingEditEngImage}
                     onChange={handleEditEngImageFileChange}
                     className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                   />
+                  <p className="text-[10px] text-muted-foreground">
+                    Upload any photo (PNG, JPEG, WebP, etc.) — converted directly into Base64 for Firebase.
+                  </p>
                   {convertingEditEngImage && (
                     <p className="text-[11px] text-primary animate-pulse">
-                      Optimizing and converting photo to Base64...
+                      Converting photo to Base64 and optimizing for Firebase...
                     </p>
                   )}
                   <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">

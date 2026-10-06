@@ -222,47 +222,120 @@ export async function uploadImageToStorage(file: File, folder = "projects"): Pro
 }
 
 // ----------------------------------------------------
-// Base64 Image Compression & Converter (Zero Bucket Dep)
+// Base64 Image Compression & Converter (Multi-format PNG, JPEG, WebP, etc.)
 // ----------------------------------------------------
 
-export function fileToBase64(file: File, maxDimension = 1200, quality = 0.82): Promise<string> {
+export function fileToBase64(
+  file: File,
+  maxDimension = 1200,
+  quality = 0.82
+): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve((e.target?.result as string) || "");
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read image file"));
     reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (typeof window === "undefined") {
-        resolve(result);
+      const rawDataUrl = e.target?.result as string;
+      if (!rawDataUrl) {
+        reject(new Error("Empty image data"));
         return;
       }
-      const img = new (window as unknown as { Image: new () => HTMLImageElement }).Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let { width, height } = img;
 
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          } else {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          resolve(result);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+      const img = new Image();
+      img.onerror = () => {
+        // Fallback to raw data if canvas fails to parse image
+        resolve(rawDataUrl);
       };
-      img.onerror = () => resolve(result);
-      img.src = result;
+
+      img.onload = () => {
+        try {
+          const originalWidth = img.naturalWidth || img.width;
+          const originalHeight = img.naturalHeight || img.height;
+
+          // Check format
+          const isPng = file.type === "image/png" || rawDataUrl.startsWith("data:image/png");
+
+          // Test WebP browser support
+          const testCanvas = document.createElement("canvas");
+          testCanvas.width = 1;
+          testCanvas.height = 1;
+          const supportsWebp =
+            testCanvas.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+
+          // Target output format:
+          // For PNG: WebP preserves alpha transparency with 70%+ smaller size;
+          // otherwise JPEG with white background fill to prevent black transparent boxes.
+          const outputMime = isPng && supportsWebp ? "image/webp" : "image/jpeg";
+
+          let curMaxDim = maxDimension;
+          let curQuality = quality;
+          let finalBase64 = "";
+
+          // Compression loop ensuring result fits comfortably in Firestore (under 600 KB)
+          for (let attempt = 0; attempt < 3; attempt++) {
+            let width = originalWidth;
+            let height = originalHeight;
+
+            if (width > curMaxDim || height > curMaxDim) {
+              if (width > height) {
+                height = Math.round((height * curMaxDim) / width);
+                width = curMaxDim;
+              } else {
+                width = Math.round((width * curMaxDim) / height);
+                height = curMaxDim;
+              }
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(width, 1);
+            canvas.height = Math.max(height, 1);
+            const ctx = canvas.getContext("2d", { alpha: isPng });
+
+            if (!ctx) {
+              resolve(rawDataUrl);
+              return;
+            }
+
+            // Fill canvas with white if converting to JPEG to prevent black transparent areas
+            if (outputMime === "image/jpeg") {
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            finalBase64 = canvas.toDataURL(outputMime, curQuality);
+
+            // Firestore document limit is 1MB (~1,048,576 bytes).
+            // A Base64 string under 650,000 characters is ~480KB and safely within Firestore.
+            if (finalBase64.length <= 650000) {
+              break;
+            }
+
+            // If still too large, step down dimension and quality
+            curMaxDim = Math.round(curMaxDim * 0.75);
+            curQuality = Math.max(curQuality - 0.15, 0.55);
+          }
+
+          resolve(finalBase64 || rawDataUrl);
+        } catch (err) {
+          console.warn("Canvas compression error, falling back to raw data:", err);
+          resolve(rawDataUrl);
+        }
+      };
+
+      img.src = rawDataUrl;
     };
-    reader.onerror = reject;
+
     reader.readAsDataURL(file);
   });
 }
