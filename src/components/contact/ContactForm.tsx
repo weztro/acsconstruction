@@ -17,11 +17,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Send, CheckCircle2, Loader2 } from "lucide-react";
+import { Send, CheckCircle2, Loader2, MessageSquare, Phone } from "lucide-react";
+
+function buildWhatsAppUrl(data: ContactFormData): string {
+  const whatsappNumber = "916382995103";
+  const message = [
+    `*🏛️ New Construction Enquiry — ACS Construction*`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `👤 *Name:* ${data.name}`,
+    `📞 *Phone:* ${data.phone}`,
+    `✉️ *Email:* ${data.email}`,
+    `📍 *Plot Location:* ${data.location || "Tenkasi, Tamil Nadu"}`,
+    `🏡 *Project Type:* ${data.projectType || "Residential Villa"}`,
+    `💰 *Budget Range:* ${data.budget || "Not Specified"}`,
+    `💬 *Requirements & Notes:*`,
+    `${data.message}`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `_Sent via acsconstruction.vercel.app_`,
+  ].join("\n");
+
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [submittedData, setSubmittedData] = React.useState<ContactFormData | null>(null);
 
   const {
     register,
@@ -45,6 +66,7 @@ export function ContactForm() {
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     try {
+      // 1. Save lead to Firestore Database
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: {
@@ -56,11 +78,18 @@ export function ContactForm() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast.success("Enquiry Received", {
-          description:
-            "Thank you! Our principal architect will contact you within 24 hours.",
-        });
+        setSubmittedData(data);
         setIsSubmitted(true);
+        toast.success("Enquiry Saved!", {
+          description: "Forwarding details to WhatsApp for fastest response...",
+        });
+
+        // 2. Automatically open WhatsApp in new tab
+        const waUrl = buildWhatsAppUrl(data);
+        if (typeof window !== "undefined") {
+          window.open(waUrl, "_blank");
+        }
+
         reset();
       } else {
         toast.error("Submission Failed", {
@@ -78,27 +107,72 @@ export function ContactForm() {
   };
 
   if (isSubmitted) {
+    const waUrl = submittedData ? buildWhatsAppUrl(submittedData) : `https://wa.me/916382995103`;
     return (
-      <div className="p-8 sm:p-12 bg-card border border-border rounded-md text-center space-y-6 shadow-xs">
-        <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-6 h-6" />
+      <div className="p-8 sm:p-12 bg-card border border-border rounded-xl text-center space-y-6 shadow-xs">
+        <div className="w-14 h-14 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h3 className="font-serif text-2xl font-normal text-foreground">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
+            Enquiry Received &amp; Logged
+          </span>
+          <h3 className="font-serif text-2xl sm:text-3xl font-normal text-foreground">
             Thank You for Reaching Out
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-            Your residential enquiry has reached our design desk. An architect will review
-            your location and requirements and call you for an initial exploratory discussion.
+            Your residential enquiry has been logged to our studio database. We have also pre-filled your enquiry on WhatsApp for direct instant chat.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setIsSubmitted(false)}
-          className="mt-4 text-xs tracking-wider uppercase font-medium border-border"
-        >
-          Send Another Enquiry
-        </Button>
+
+        {/* WhatsApp Forwarding Card */}
+        <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg max-w-md mx-auto space-y-3 text-left">
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            <MessageSquare className="w-4 h-4 shrink-0" />
+            <span>Direct WhatsApp Forwarding</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Did WhatsApp not open automatically? Tap the button below to send your pre-filled inquiry to our WhatsApp number directly.
+          </p>
+          <Button
+            asChild
+            className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-medium text-xs h-10 shadow-xs uppercase tracking-wider"
+          >
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat on WhatsApp (+91 6382995103)</span>
+            </a>
+          </Button>
+        </div>
+
+        {/* Direct Call & Reset Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="text-xs h-9 border-border"
+          >
+            <a href="tel:+919486943652" className="flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-primary" />
+              <span>Direct Call (+91 94869 43652)</span>
+            </a>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSubmitted(false)}
+            className="text-xs h-9 text-muted-foreground hover:text-foreground"
+          >
+            Submit Another Enquiry
+          </Button>
+        </div>
       </div>
     );
   }
@@ -250,18 +324,18 @@ export function ContactForm() {
         {isSubmitting ? (
           <span className="flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Submitting Enquiry...
+            Saving &amp; Opening WhatsApp...
           </span>
         ) : (
           <span className="flex items-center gap-2">
             <Send className="w-3.5 h-3.5" />
-            Submit Consultation Request
+            Submit Request &amp; Connect via WhatsApp
           </span>
         )}
       </Button>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        We respect your privacy. Your contact details are never shared with third parties.
+        Enquiries are saved to our studio database and forwarded directly to WhatsApp (+91 6382995103) for the fastest response.
       </p>
     </form>
   );
