@@ -8,11 +8,10 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  return (
-    <Link
-      href={`/projects/${project.slug}`}
-      className="group block rounded-md overflow-hidden border border-border bg-card hover:border-primary/60 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-xs"
-    >
+  const isDynamic = project.slug.startsWith("p-");
+
+  const CardContent = (
+    <>
       {/* 4:3 Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden bg-secondary/30">
         <ArchitecturalImage
@@ -25,9 +24,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
         {/* Hover arrow indicator */}
-        <div className="absolute top-3.5 right-3.5 w-8 h-8 rounded-md bg-background/90 text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-xs">
-          <ArrowRight className="w-3.5 h-3.5 text-primary" />
-        </div>
+        {!isDynamic && (
+          <div className="absolute top-3.5 right-3.5 w-8 h-8 rounded-md bg-background/90 text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-xs">
+            <ArrowRight className="w-3.5 h-3.5 text-primary" />
+          </div>
+        )}
       </div>
 
       {/* Card Info Footer: Clean Hierarchy */}
@@ -48,11 +49,34 @@ export function ProjectCard({ project }: ProjectCardProps) {
           {project.style}
         </p>
 
-        <div className="pt-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-primary group-hover:underline">
-          <span>View Project</span>
-          <ArrowRight className="w-3 h-3" />
-        </div>
+        {!isDynamic ? (
+          <div className="pt-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-primary group-hover:underline">
+            <span>View Project</span>
+            <ArrowRight className="w-3 h-3" />
+          </div>
+        ) : (
+          <div className="pt-2 flex items-center gap-1.5 text-[11px] font-mono text-primary/80">
+            <span>Verified Portfolio Project</span>
+          </div>
+        )}
       </div>
+    </>
+  );
+
+  if (isDynamic) {
+    return (
+      <div className="group block rounded-md overflow-hidden border border-border bg-card shadow-xs">
+        {CardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/projects/${project.slug}`}
+      className="group block rounded-md overflow-hidden border border-border bg-card hover:border-primary/60 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-xs"
+    >
+      {CardContent}
     </Link>
   );
 }

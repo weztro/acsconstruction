@@ -42,7 +42,7 @@ export async function generateMetadata({
     title: `${project.name} — ${project.location}`,
     description: project.headline,
     openGraph: {
-      title: `${project.name} | Sthapati Homes`,
+      title: `${project.name} | ACS Construction`,
       description: project.headline,
       images: [{ url: project.heroImage }],
     },

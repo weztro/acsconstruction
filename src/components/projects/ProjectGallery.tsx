@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { PROJECTS, Project } from "@/lib/constants";
+import { fetchProjectsFromFirestore } from "@/lib/firebase";
 import { ProjectCard } from "./ProjectCard";
 import { Button } from "@/components/ui/button";
 
@@ -16,13 +17,54 @@ const CATEGORIES = [
 
 export function ProjectGallery() {
   const [activeCategory, setActiveCategory] = React.useState("All Projects");
+  const [dynamicProjects, setDynamicProjects] = React.useState<Project[]>([]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetchProjectsFromFirestore()
+      .then((items) => {
+        if (!isMounted || !items || items.length === 0) return;
+        const mapped: Project[] = items.map((fp) => ({
+          slug: `p-${fp.id || fp.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+          name: fp.title,
+          style: fp.category || "Residential Villa",
+          category: fp.category || "Courtyard Homes",
+          location: fp.location,
+          builtUpArea: fp.area,
+          plotSize: "Custom Plot",
+          year: "2025",
+          timeline: fp.timeline || "Completed",
+          headline: fp.tagline || fp.title,
+          description: fp.description,
+          featured: false,
+          heroImage: fp.imageUrl || "/images/hero/hero-villa.jpg",
+          gallery: [fp.imageUrl || "/images/hero/hero-villa.jpg"],
+          clientBrief: fp.description,
+          materials: ["Natural Stone", "Teak Wood"],
+          highlights: fp.keyFeatures || [],
+          floorPlanConcept: "Bespoke vernacular layout optimized for cross-ventilation.",
+        }));
+        setDynamicProjects(mapped);
+      })
+      .catch((err) => {
+        console.warn("Could not load dynamic projects from Firestore:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const allProjects = React.useMemo(() => {
+    return [...dynamicProjects, ...PROJECTS];
+  }, [dynamicProjects]);
 
   const filteredProjects: Project[] = React.useMemo(() => {
     if (activeCategory === "All Projects") {
-      return PROJECTS;
+      return allProjects;
     }
-    return PROJECTS.filter((p) => p.category === activeCategory);
-  }, [activeCategory]);
+    return allProjects.filter((p) => p.category === activeCategory);
+  }, [activeCategory, allProjects]);
 
   return (
     <div className="space-y-12">

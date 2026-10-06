@@ -9,7 +9,7 @@ import {
   fetchProjectsFromFirestore,
   saveProjectToFirestore,
   deleteProjectFromFirestore,
-  uploadImageToStorage,
+  fileToBase64,
   type Lead,
   type ProjectItem,
 } from "@/lib/firebase";
@@ -56,17 +56,19 @@ export default function AdminDashboardPage() {
   const [newProject, setNewProject] = React.useState({
     title: "",
     tagline: "",
-    category: "Residential Architecture",
-    location: "Tenkasi, Tamil Nadu",
+    category: "Residential Villa",
+    location: "Pandiyapuram, Tenkasi",
     area: "2,800 sq.ft",
     timeline: "12 Months",
     description: "",
     imageUrl: "",
     keyFeatures: "Nadumuttam Courtyard, Teak Joinery, Clay Roof Tiles",
   });
-  const [imageFile, setImageFile] = React.useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = React.useState(false);
+  const [imageBase64, setImageBase64] = React.useState<string>("");
+  const [imageFileSize, setImageFileSize] = React.useState<string>("");
+  const [convertingImage, setConvertingImage] = React.useState(false);
   const [submittingProject, setSubmittingProject] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // Protect Admin route
   React.useEffect(() => {
@@ -98,6 +100,36 @@ export default function AdminDashboardPage() {
     }
   }, [user, loadLeads, loadProjects]);
 
+  // Handle Image selection & Base64 conversion
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setConvertingImage(true);
+      // Downsample to max 1200px width/height and compress to 82% quality JPEG
+      const b64 = await fileToBase64(file, 1200, 0.82);
+      setImageBase64(b64);
+      const approxKb = Math.round((b64.length * 3) / 4 / 1024);
+      setImageFileSize(`${approxKb} KB`);
+      setNewProject((prev) => ({ ...prev, imageUrl: b64 }));
+    } catch (err) {
+      console.error("Failed to convert image to Base64:", err);
+      alert("Could not process image file. Please try another image.");
+    } finally {
+      setConvertingImage(false);
+    }
+  };
+
+  const handleClearImage = () => {
+    setImageBase64("");
+    setImageFileSize("");
+    setNewProject((prev) => ({ ...prev, imageUrl: "" }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   // Handle Lead Status Change
   const handleStatusChange = async (leadId: string, newStatus: Lead["status"]) => {
     const success = await updateLeadStatusInFirestore(leadId, newStatus);
@@ -113,25 +145,10 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     setSubmittingProject(true);
 
-    let finalImageUrl = newProject.imageUrl;
-
-    // Upload file if selected
-    if (imageFile) {
-      try {
-        setUploadingImage(true);
-        finalImageUrl = await uploadImageToStorage(imageFile, "projects");
-      } catch (err) {
-        console.warn("Storage upload failed or fallback used:", err);
-        // Fallback to default villa image if Storage is not enabled
-        finalImageUrl = finalImageUrl || "/images/hero/hero-villa.jpg";
-      } finally {
-        setUploadingImage(false);
-      }
-    }
-
-    if (!finalImageUrl) {
-      finalImageUrl = "/images/architecture/traditional-heritage.jpg";
-    }
+    const finalImageUrl =
+      imageBase64 ||
+      newProject.imageUrl ||
+      "/images/architecture/traditional-heritage.jpg";
 
     const featuresArray = newProject.keyFeatures
       .split(",")
@@ -154,12 +171,12 @@ export default function AdminDashboardPage() {
 
     if (res.success) {
       setIsAddModalOpen(false);
-      setImageFile(null);
+      handleClearImage();
       setNewProject({
         title: "",
         tagline: "",
-        category: "Residential Architecture",
-        location: "Tenkasi, Tamil Nadu",
+        category: "Residential Villa",
+        location: "Pandiyapuram, Tenkasi",
         area: "2,800 sq.ft",
         timeline: "12 Months",
         description: "",
@@ -167,6 +184,8 @@ export default function AdminDashboardPage() {
         keyFeatures: "Nadumuttam Courtyard, Teak Joinery, Clay Roof Tiles",
       });
       loadProjects();
+    } else {
+      alert("Failed to save project to Firestore. Please check your Firestore rules in Firebase Console.");
     }
   };
 
@@ -486,6 +505,7 @@ export default function AdminDashboardPage() {
                             src={proj.imageUrl}
                             alt={proj.title}
                             fill
+                            unoptimized
                             className="object-cover transition-transform duration-500 group-hover:scale-103"
                           />
                         ) : (
@@ -639,27 +659,70 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Image Upload or URL */}
-              <div className="space-y-2 p-3 bg-secondary/30 rounded-md border border-border">
-                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                  <Upload className="w-3.5 h-3.5 text-primary" />
-                  <span>Project Image (Upload File or paste Image URL)</span>
-                </label>
+              {/* Image Upload via Base64 or URL */}
+              <div className="space-y-3 p-4 bg-secondary/30 rounded-lg border border-border">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span>Project Image (Upload directly as Base64)</span>
+                  </label>
+                  {imageBase64 && (
+                    <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
+                      Base64 Ready • {imageFileSize}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Live Preview if an image is selected */}
+                {(imageBase64 || newProject.imageUrl) && (
+                  <div className="relative aspect-[16/9] w-full rounded-md overflow-hidden border border-border bg-black/20 group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imageBase64 || newProject.imageUrl}
+                      alt="Project Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearImage}
+                        className="h-7 px-2 text-[11px] bg-background/80 text-destructive border-destructive/40 hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                    className="text-xs text-muted-foreground file:mr-3 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:bg-primary file:text-primary-foreground hover:file:opacity-90"
+                    disabled={convertingImage}
+                    onChange={handleImageFileChange}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                   />
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-                    <span>or Image URL:</span>
+                  {convertingImage && (
+                    <p className="text-[11px] text-primary animate-pulse">
+                      Optimizing and converting image to Base64...
+                    </p>
+                  )}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 pt-1 border-t border-border/50">
+                    <span className="shrink-0">or Image URL:</span>
                     <input
                       type="text"
                       placeholder="https://... or /images/hero/hero-villa.jpg"
-                      value={newProject.imageUrl}
-                      onChange={(e) => setNewProject({ ...newProject, imageUrl: e.target.value })}
-                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      value={newProject.imageUrl.startsWith("data:") ? "" : newProject.imageUrl}
+                      onChange={(e) => {
+                        setImageBase64("");
+                        setImageFileSize("");
+                        setNewProject({ ...newProject, imageUrl: e.target.value });
+                      }}
+                      className="flex-1 px-2.5 py-1 text-xs bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                     />
                   </div>
                 </div>
@@ -701,11 +764,11 @@ export default function AdminDashboardPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={submittingProject || uploadingImage}
+                  disabled={submittingProject || convertingImage}
                   className="text-xs h-9 uppercase tracking-wider"
                 >
-                  {uploadingImage
-                    ? "Uploading Image..."
+                  {convertingImage
+                    ? "Converting Image..."
                     : submittingProject
                     ? "Saving Project..."
                     : "Publish Project"}

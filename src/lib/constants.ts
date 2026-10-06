@@ -627,7 +627,7 @@ export const INDIAN_ARCH_PHILOSOPHY = [
 export const TESTIMONIALS = [
   {
     quote:
-      "Finding a team that truly understood our wish for a traditional Kerala Nalukettu courtyard while incorporating modern smart lighting and concealed AC was rare. Sthapati delivered on time with impeccable craftsmanship.",
+      "Finding a team that truly understood our wish for a traditional Kerala Nalukettu courtyard while incorporating modern smart lighting and concealed AC was rare. ACS Construction delivered on time with impeccable craftsmanship.",
     clientName: "Dr. Arvind & Maya Nambiar",
     homeType: "Courtyard Heritage Villa (5,400 sq.ft.)",
     city: "Bengaluru, Karnataka",

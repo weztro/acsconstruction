@@ -217,3 +217,49 @@ export async function uploadImageToStorage(file: File, folder = "projects"): Pro
   await uploadBytes(storageRef, file);
   return await getDownloadURL(storageRef);
 }
+
+// ----------------------------------------------------
+// Base64 Image Compression & Converter (Zero Bucket Dep)
+// ----------------------------------------------------
+
+export function fileToBase64(file: File, maxDimension = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (typeof window === "undefined") {
+        resolve(result);
+        return;
+      }
+      const img = new (window as unknown as { Image: new () => HTMLImageElement }).Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(result);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => resolve(result);
+      img.src = result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}

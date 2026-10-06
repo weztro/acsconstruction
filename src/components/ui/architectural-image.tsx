@@ -27,6 +27,8 @@ export function ArchitecturalImage({
     setHasError(false);
   }
 
+  const isBase64 = typeof imgSrc === "string" && (imgSrc.startsWith("data:") || imgSrc.startsWith("blob:"));
+
   return (
     <div
       className={cn(
@@ -37,6 +39,7 @@ export function ArchitecturalImage({
     >
       <Image
         {...props}
+        unoptimized={props.unoptimized ?? isBase64}
         src={hasError ? fallbackSrc : imgSrc}
         alt={alt}
         className={cn(
