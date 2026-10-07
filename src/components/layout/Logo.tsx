@@ -23,7 +23,7 @@ export function AcsMark({ className }: { className?: string }) {
         src="/images/logo/acs-logo.png"
         alt={BRAND.name}
         width={997}
-        height={651}
+        height={456}
         priority
         unoptimized
         className="w-full h-full object-contain dark:hidden"
@@ -32,7 +32,7 @@ export function AcsMark({ className }: { className?: string }) {
         src="/images/logo/acs-logo-dark.png"
         alt={BRAND.name}
         width={997}
-        height={651}
+        height={456}
         priority
         unoptimized
         className="w-full h-full object-contain hidden dark:block"
@@ -73,7 +73,7 @@ export function Logo({
           src="/images/logo/acs-logo.png"
           alt={BRAND.name}
           width={997}
-          height={651}
+          height={456}
           priority
           unoptimized
           className={cn(
@@ -87,7 +87,7 @@ export function Logo({
           src="/images/logo/acs-logo-dark.png"
           alt={BRAND.name}
           width={997}
-          height={651}
+          height={456}
           priority
           unoptimized
           className={cn(
