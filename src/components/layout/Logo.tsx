@@ -56,19 +56,19 @@ export function Logo({
   const sizeStyles = {
     sm: {
       mark: "h-9 sm:h-10",
-      text: "text-[8.5px] sm:text-[9.5px] tracking-[0.26em] mt-0.5",
+      text: "text-[10px] sm:text-[11px] tracking-[0.12em] sm:tracking-[0.14em] mt-0.5",
     },
     md: {
-      mark: "h-13 sm:h-16 lg:h-18",
-      text: "text-[10px] sm:text-[11.5px] lg:text-[13px] tracking-[0.3em] sm:tracking-[0.34em] mt-1 sm:mt-1.5",
+      mark: "h-12 sm:h-14 lg:h-16",
+      text: "text-[12px] sm:text-[14px] lg:text-[16px] tracking-[0.12em] sm:tracking-[0.14em] mt-1 sm:mt-1.5",
     },
     lg: {
       mark: "h-18 sm:h-22 lg:h-26",
-      text: "text-sm sm:text-base tracking-[0.34em] sm:tracking-[0.38em] mt-1.5 sm:mt-2",
+      text: "text-base sm:text-lg lg:text-xl tracking-[0.14em] mt-1.5 sm:mt-2",
     },
     xl: {
       mark: "h-24 sm:h-28 lg:h-32",
-      text: "text-base sm:text-lg tracking-[0.36em] mt-2",
+      text: "text-xl sm:text-2xl tracking-[0.16em] mt-2",
     },
   };
 
@@ -112,11 +112,11 @@ export function Logo({
         />
       </div>
 
-      {/* Manual "CONSTRUCTION" Wordmark */}
+      {/* Manual "CONSTRUCTION" Wordmark with tall upright proportions */}
       {showConstructionText && (
         <span
           className={cn(
-            "font-serif uppercase font-extrabold text-foreground/95 select-none text-center leading-none",
+            "font-sans uppercase font-extrabold text-foreground tracking-[0.12em] sm:tracking-[0.14em] scale-y-[1.1] origin-top select-none text-center leading-none",
             currentSize.text,
             textClassName
           )}
