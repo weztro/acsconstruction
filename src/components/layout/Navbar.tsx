@@ -35,8 +35,8 @@ export function Navbar() {
           size="md"
           imageClassName={
             isScrolled
-              ? "!h-12 sm:!h-14 lg:!h-16"
-              : "!h-16 sm:!h-20 lg:!h-24"
+              ? "!h-10 sm:!h-11 lg:!h-13"
+              : "!h-13 sm:!h-16 lg:!h-18"
           }
         />
 

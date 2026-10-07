@@ -13,6 +13,7 @@ interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   showTagline?: boolean;
   showText?: boolean;
+  showConstructionText?: boolean;
   asLink?: boolean;
 }
 
@@ -49,22 +50,35 @@ export function Logo({
   size = "md",
   showTagline = true,
   showText = false,
+  showConstructionText = true,
   asLink = true,
 }: LogoProps) {
   const sizeStyles = {
-    sm: "h-10 sm:h-11",
-    md: "h-14 sm:h-16 lg:h-20",
-    lg: "h-20 sm:h-24 lg:h-28",
-    xl: "h-24 sm:h-32",
+    sm: {
+      mark: "h-9 sm:h-10",
+      text: "text-[7.5px] sm:text-[8px] tracking-[0.24em] mt-0.5",
+    },
+    md: {
+      mark: "h-13 sm:h-16 lg:h-18",
+      text: "text-[8.5px] sm:text-[10px] lg:text-[11.5px] tracking-[0.28em] sm:tracking-[0.32em] mt-1 sm:mt-1.5",
+    },
+    lg: {
+      mark: "h-18 sm:h-22 lg:h-26",
+      text: "text-xs sm:text-sm tracking-[0.32em] sm:tracking-[0.36em] mt-1.5 sm:mt-2",
+    },
+    xl: {
+      mark: "h-24 sm:h-28 lg:h-32",
+      text: "text-sm sm:text-base tracking-[0.35em] mt-2",
+    },
   };
 
-  const heightClass = sizeStyles[size] || sizeStyles.md;
+  const currentSize = sizeStyles[size] || sizeStyles.md;
 
   const content = (
-    <div className={cn("group inline-flex items-center gap-3", className)}>
+    <div className={cn("group inline-flex flex-col items-center justify-center text-center", className)}>
       <div
         className={cn(
-          "relative shrink-0 flex items-center transition-transform duration-200 group-hover:scale-102",
+          "relative shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-102",
           markClassName
         )}
       >
@@ -78,7 +92,7 @@ export function Logo({
           unoptimized
           className={cn(
             "w-auto object-contain dark:hidden drop-shadow-xs transition-all duration-300",
-            heightClass,
+            currentSize.mark,
             imageClassName
           )}
         />
@@ -92,14 +106,27 @@ export function Logo({
           unoptimized
           className={cn(
             "w-auto object-contain hidden dark:block drop-shadow-xs transition-all duration-300",
-            heightClass,
+            currentSize.mark,
             imageClassName
           )}
         />
       </div>
 
+      {/* Manual "CONSTRUCTION" Wordmark */}
+      {showConstructionText && (
+        <span
+          className={cn(
+            "font-serif uppercase font-bold text-foreground/90 group-hover:text-primary transition-colors select-none text-center leading-none",
+            currentSize.text,
+            textClassName
+          )}
+        >
+          CONSTRUCTION
+        </span>
+      )}
+
       {showText && (
-        <div className="flex flex-col">
+        <div className="flex flex-col mt-1">
           <span
             className={cn(
               "font-serif font-medium tracking-tight text-foreground group-hover:text-primary transition-colors leading-none",
