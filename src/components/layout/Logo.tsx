@@ -116,7 +116,7 @@ export function Logo({
       {showConstructionText && (
         <span
           className={cn(
-            "font-serif uppercase font-bold text-foreground/90 group-hover:text-primary transition-colors select-none text-center leading-none",
+            "font-serif uppercase font-bold text-foreground/90 select-none text-center leading-none",
             currentSize.text,
             textClassName
           )}
