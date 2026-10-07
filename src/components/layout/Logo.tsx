@@ -23,8 +23,8 @@ export function AcsMark({ className }: { className?: string }) {
       <Image
         src="/images/logo/acs-logo.png"
         alt={BRAND.name}
-        width={997}
-        height={456}
+        width={971}
+        height={534}
         priority
         unoptimized
         className="w-full h-full object-contain dark:hidden"
@@ -32,8 +32,8 @@ export function AcsMark({ className }: { className?: string }) {
       <Image
         src="/images/logo/acs-logo-dark.png"
         alt={BRAND.name}
-        width={997}
-        height={456}
+        width={971}
+        height={534}
         priority
         unoptimized
         className="w-full h-full object-contain hidden dark:block"
@@ -50,7 +50,7 @@ export function Logo({
   size = "md",
   showTagline = true,
   showText = false,
-  showConstructionText = true,
+  showConstructionText = false,
   asLink = true,
 }: LogoProps) {
   const sizeStyles = {
@@ -82,12 +82,12 @@ export function Logo({
           markClassName
         )}
       >
-        {/* Light theme logo */}
+        {/* Light theme logo (dark 3D letters) */}
         <Image
           src="/images/logo/acs-logo.png"
           alt={BRAND.name}
-          width={997}
-          height={456}
+          width={971}
+          height={534}
           priority
           unoptimized
           className={cn(
@@ -96,12 +96,12 @@ export function Logo({
             imageClassName
           )}
         />
-        {/* Dark theme logo */}
+        {/* Dark theme logo (white 3D letters with gold glow) */}
         <Image
           src="/images/logo/acs-logo-dark.png"
           alt={BRAND.name}
-          width={997}
-          height={456}
+          width={971}
+          height={534}
           priority
           unoptimized
           className={cn(
@@ -111,19 +111,6 @@ export function Logo({
           )}
         />
       </div>
-
-      {/* Manual "CONSTRUCTION" Wordmark with tall upright proportions */}
-      {showConstructionText && (
-        <span
-          className={cn(
-            "font-sans uppercase font-extrabold text-foreground tracking-[0.12em] sm:tracking-[0.14em] scale-y-[1.1] origin-top select-none text-center leading-none",
-            currentSize.text,
-            textClassName
-          )}
-        >
-          CONSTRUCTION
-        </span>
-      )}
 
       {showText && (
         <div className="flex flex-col mt-1">
