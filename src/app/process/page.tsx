@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "7-Step Construction Process",
   description:
-    "Explore our structured, transparent 7-step residential construction process from initial consultation to final Griha Pravesh handover.",
+    "Explore our structured, transparent 7-step residential construction process from initial consultation to final Graha Pravesam handover.",
 };
 
 export default function ProcessPage() {
@@ -27,7 +27,7 @@ export default function ProcessPage() {
             Disciplined Methodology
           </Badge>
           <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-foreground leading-[1.15]">
-            From Blueprint to Griha Pravesh.
+            From Blueprint to Graha Pravesam.
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground font-light leading-[1.7]">
             Constructing a home shouldn&rsquo;t be chaotic or stressful. We follow a milestone-locked

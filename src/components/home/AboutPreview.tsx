@@ -32,8 +32,8 @@ export function AboutPreview() {
             <div className="relative rounded-md overflow-hidden border border-border shadow-sm">
               <div className="aspect-[4/3] sm:aspect-[16/11] relative">
                 <ArchitecturalImage
-                  src="/images/architecture/traditional-heritage.jpg"
-                  alt="Ancestral Indian Heritage Home with Mangalore Clay Tiles"
+                  src="/images/architecture/neat-home-elevation.jpg"
+                  alt="Modern Indian Residential House Exterior Elevation — Simple & Neat Construction"
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover"

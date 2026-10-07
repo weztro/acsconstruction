@@ -87,8 +87,8 @@ export default function AboutPage() {
           <div className="lg:col-span-6 relative">
             <div className="aspect-[4/3] relative rounded-md overflow-hidden border border-border shadow-sm bg-secondary/30">
               <ArchitecturalImage
-                src="/images/architecture/traditional-heritage.jpg"
-                alt="Heritage Indian Home Architecture"
+                src="/images/architecture/neat-home-elevation.jpg"
+                alt="Modern Residential Home Exterior Elevation — Clean & Neat Architecture"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"

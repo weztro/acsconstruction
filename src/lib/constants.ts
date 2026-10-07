@@ -525,7 +525,7 @@ export const WHY_CHOOSE_US = [
     iconName: "Clock",
     title: "Timely Execution",
     description:
-      "Milestone-locked contracts backed by strict critical path schedules ensuring on-time Griha Pravesh without stress.",
+      "Milestone-locked contracts backed by strict critical path schedules ensuring on-time Graha Pravesam without stress.",
   },
   {
     iconName: "HeartHandshake",
@@ -590,7 +590,7 @@ export const PROCESS_STEPS = [
     duration: "Final Milestone",
     description:
       "Deep cleaning of your home, key handover celebration, and delivery of the comprehensive homeowner dossier with warranties and as-built drawings.",
-    highlights: ["Griha Pravesh ready cleaning", "Comprehensive warranty folder", "10-year structural warranty card"],
+    highlights: ["Graha Pravesam ready cleaning", "Comprehensive warranty folder", "10-year structural warranty card"],
   },
 ];
 
