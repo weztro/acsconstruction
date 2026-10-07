@@ -56,19 +56,19 @@ export function Logo({
   const sizeStyles = {
     sm: {
       mark: "h-9 sm:h-10",
-      text: "text-[8.5px] sm:text-[9.5px] tracking-[0.26em] mt-0.5",
+      text: "text-[7.5px] sm:text-[8px] tracking-[0.24em] mt-0.5",
     },
     md: {
       mark: "h-13 sm:h-16 lg:h-18",
-      text: "text-[10px] sm:text-[11.5px] lg:text-[13px] tracking-[0.3em] sm:tracking-[0.34em] mt-1 sm:mt-1.5",
+      text: "text-[8.5px] sm:text-[10px] lg:text-[11.5px] tracking-[0.28em] sm:tracking-[0.32em] mt-1 sm:mt-1.5",
     },
     lg: {
       mark: "h-18 sm:h-22 lg:h-26",
-      text: "text-sm sm:text-base tracking-[0.34em] sm:tracking-[0.38em] mt-1.5 sm:mt-2",
+      text: "text-xs sm:text-sm tracking-[0.32em] sm:tracking-[0.36em] mt-1.5 sm:mt-2",
     },
     xl: {
       mark: "h-24 sm:h-28 lg:h-32",
-      text: "text-base sm:text-lg tracking-[0.36em] mt-2",
+      text: "text-sm sm:text-base tracking-[0.35em] mt-2",
     },
   };
 
@@ -78,7 +78,7 @@ export function Logo({
     <div className={cn("group inline-flex flex-col items-center justify-center text-center", className)}>
       <div
         className={cn(
-          "relative shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-104",
+          "relative shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-102",
           markClassName
         )}
       >
@@ -112,11 +112,11 @@ export function Logo({
         />
       </div>
 
-      {/* Manual "CONSTRUCTION" Wordmark with synchronized zoom & weight hover */}
+      {/* Manual "CONSTRUCTION" Wordmark */}
       {showConstructionText && (
         <span
           className={cn(
-            "font-serif uppercase font-bold text-foreground/90 group-hover:text-primary group-hover:font-extrabold group-hover:scale-105 transition-all duration-300 origin-center inline-block select-none text-center leading-none",
+            "font-serif uppercase font-bold text-foreground/90 group-hover:text-primary transition-colors select-none text-center leading-none",
             currentSize.text,
             textClassName
           )}
