@@ -2,6 +2,7 @@ import { Hero } from "@/components/home/Hero";
 import { TrustStats } from "@/components/home/TrustStats";
 import { AboutPreview } from "@/components/home/AboutPreview";
 import { Services } from "@/components/home/Services";
+import { PackageCards } from "@/components/home/PackageCards";
 import { ArchitectureShowcase } from "@/components/home/ArchitectureShowcase";
 import { WorkmanshipSection } from "@/components/home/WorkmanshipSection";
 import { IndianArchitecturePhilosophy } from "@/components/home/IndianArchitecturePhilosophy";
@@ -17,6 +18,7 @@ export default function HomePage() {
       <TrustStats />
       <AboutPreview />
       <Services />
+      <PackageCards />
       <ArchitectureShowcase />
       <WorkmanshipSection />
       <IndianArchitecturePhilosophy />

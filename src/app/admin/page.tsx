@@ -84,6 +84,9 @@ import {
   MessageSquareQuote,
 } from "lucide-react";
 import Image from "next/image";
+import { PackagesManager } from "@/components/admin/PackagesManager";
+import { HeroMetricsManager } from "@/components/admin/HeroMetricsManager";
+import { ServicesManager } from "@/components/admin/ServicesManager";
 
 function formatVisitTime(ts: unknown): string {
   if (!ts) return "Just now";
@@ -138,8 +141,10 @@ export default function AdminDashboardPage() {
   const [visits, setVisits] = React.useState<SiteVisit[]>([]);
   const [visitsLoading, setVisitsLoading] = React.useState(true);
 
-  // Studio Master Config State (Budgets, Project Types, Mesthris & Testimonials)
-  const [configSubTab, setConfigSubTab] = React.useState<"styles" | "budgets" | "engineers" | "testimonials">("styles");
+  // Studio Master Config State (Packages, Hero Metrics, Services, Budgets, Project Types, Mesthris & Testimonials)
+  const [configSubTab, setConfigSubTab] = React.useState<
+    "packages" | "hero_metrics" | "services" | "styles" | "budgets" | "engineers" | "testimonials"
+  >("packages");
   const [dynamicProjectTypes, setDynamicProjectTypes] = React.useState<DynamicProjectType[]>([]);
   const [dynamicBudgets, setDynamicBudgets] = React.useState<DynamicBudgetRange[]>([]);
   const [dynamicEngineers, setDynamicEngineers] = React.useState<EngineerMesthri[]>([]);
@@ -2137,7 +2142,46 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Sub-Tabs Selector */}
-              <div className="flex items-center gap-1.5 p-1 bg-secondary/60 border border-border rounded-lg">
+              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-secondary/60 border border-border rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setConfigSubTab("packages")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    configSubTab === "packages"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 inline mr-1 text-[#B86F55]" />
+                  Packages &amp; Pricing (Image 1)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConfigSubTab("hero_metrics")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    configSubTab === "hero_metrics"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
+                  Hero Trust Metrics (Image 2)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConfigSubTab("services")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    configSubTab === "services"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <HardHat className="w-3.5 h-3.5 inline mr-1 text-primary" />
+                  Services &amp; Practices
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setConfigSubTab("styles")}
@@ -2191,6 +2235,15 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </div>
+
+            {/* SUBTAB 0A: PACKAGES & PRICING PLANS (IMAGE 1 REFERENCE) */}
+            {configSubTab === "packages" && <PackagesManager />}
+
+            {/* SUBTAB 0B: HERO TRUST INDICATORS & METRICS (IMAGE 2 REFERENCE) */}
+            {configSubTab === "hero_metrics" && <HeroMetricsManager />}
+
+            {/* SUBTAB 0C: DYNAMIC SERVICES & PRACTICES */}
+            {configSubTab === "services" && <ServicesManager />}
 
             {/* SUBTAB 1: PROJECT TYPES / ARCHITECTURAL STYLES */}
             {configSubTab === "styles" && (

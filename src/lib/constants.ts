@@ -671,3 +671,247 @@ export const BUDGET_RANGES = [
   "₹2.5 Crores+",
   "Not Decided Yet",
 ];
+
+// ====================================================
+// HERO KEY METRICS (TRUST INDICATORS)
+// ====================================================
+
+export interface HeroMetricItem {
+  id?: string;
+  value: string;
+  label: string;
+}
+
+export const DEFAULT_HERO_METRICS: HeroMetricItem[] = [
+  { id: "metric-1", value: "₹2,350 / sq.ft", label: "Turnkey Construction Base" },
+  { id: "metric-2", value: "45-Point Audit", label: "Quality Engineering Checks" },
+  { id: "metric-3", value: "Fixed Timeline", label: "Milestone Guaranteed" },
+];
+
+// ====================================================
+// TURNKEY CONSTRUCTION PACKAGES / PRICING PLANS
+// ====================================================
+
+export interface DetailedCategorySpec {
+  category: string;
+  items: string[];
+}
+
+export interface DynamicPackage {
+  id?: string;
+  name: string;
+  price: string;
+  unit?: string;
+  badge?: string;
+  isPopular?: boolean;
+  features: string[];
+  description?: string;
+  detailedSpecs?: DetailedCategorySpec[];
+  order?: number;
+  isActive?: boolean;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
+export const DEFAULT_PACKAGES: DynamicPackage[] = [
+  {
+    id: "silver-essential",
+    name: "Silver Essential",
+    price: "₹1,850 / sq.ft",
+    unit: "Base Civil & Standard Finishes",
+    badge: "ESSENTIAL",
+    isPopular: false,
+    order: 1,
+    isActive: true,
+    description:
+      "A dependable, cost-optimized turnkey civil construction package built with top-tier Tata steel and Ultratech cement for budget-conscious homeowners.",
+    features: [
+      "Tata Tiscon Fe 550D TMT Steel & Ultratech 53-Grade Cement",
+      "Solid Concrete Block Masonry (6\" External & 4\" Partition)",
+      "Double Coat Cement Plastering with Waterproofing Compounds",
+      "Vitrified Tile Flooring (2x2 ft Standard Brand)",
+      "Jaquar Continental Plumbing Fixtures & CP Fittings",
+      "Anchor / Roma Modular Electrical Switches & Polycab Wires",
+      "Asian Paints Tractor Emulsion (Internal & External)",
+      "5-Year Structural Integrity & Anti-Termite Warranty",
+    ],
+    detailedSpecs: [
+      {
+        category: "Structure & Civil",
+        items: [
+          "Tata Tiscon Fe 550D TMT Steel",
+          "Ultratech / Dalmia 53-grade OPC/PPC Cement",
+          "Solid Concrete Block (6 inch exterior, 4 inch interior)",
+          "10 ft Floor-to-Ceiling Clear Ceiling Height",
+        ],
+      },
+      {
+        category: "Flooring & Tiles",
+        items: [
+          "Living, Dining & Bedrooms: 2x2 ft Vitrified Tiles (₹55/sq.ft allowance)",
+          "Bathrooms: Anti-skid Ceramic Wall & Floor Tiles up to 7 ft",
+          "Kitchen: Polished Granite Slab with Stainless Steel Sink",
+        ],
+      },
+      {
+        category: "Doors & Windows",
+        items: [
+          "Main Door: Solid Teak Frame with Flush Shutter",
+          "Internal Doors: Sal Wood Frame with Molded Skin Shutters",
+          "Windows: 2-Track Powder Coated Aluminum Sliding Windows",
+        ],
+      },
+      {
+        category: "Plumbing & Electrical",
+        items: [
+          "Concealed CPVC/PVC Pipes (Supreme / Ashirvad)",
+          "CP Fittings & Sanitary: Jaquar Continental & Hindware",
+          "Modular Switches: Anchor Roma with Polycab FRLS Wires",
+        ],
+      },
+      {
+        category: "Painting & Warranty",
+        items: [
+          "Internal: 2 Coats Putty, 1 Primer, 2 Coats Asian Paints Tractor Emulsion",
+          "External: 1 Primer, 2 Coats Weatherproof Exterior Paint",
+          "Warranty: 5-Year Structural Warranty with Annual Audit",
+        ],
+      },
+    ],
+  },
+  {
+    id: "gold-premium",
+    name: "Gold Premium",
+    price: "₹2,350 / sq.ft",
+    unit: "Turnkey Construction with Premium Living",
+    badge: "MOST POPULAR",
+    isPopular: true,
+    order: 2,
+    isActive: true,
+    description:
+      "Our hallmark and most chosen turnkey package. Combines enhanced structural resilience, teakwood accents, large-format glazed vitrified tiles, and modular kitchen hardware.",
+    features: [
+      "Seismic Resistant Fe 550D RCC Frame with Automated Curing",
+      "Solid Teakwood Main Door Frame & Handcrafted Entrance Shutter",
+      "Large Format Glazed Vitrified Tiles (4x2 ft Premium)",
+      "Kohler / Jaquar Artize Premium Sanitary & Concealed Diverters",
+      "Full Modular Kitchen Setup with Hettich Soft-Close Hardware",
+      "Legrand / Schneider Automation-Ready Modular Switches",
+      "Asian Paints Apex Ultima Exterior Weather Protection",
+      "10-Year Comprehensive Structural & Waterproofing Warranty",
+    ],
+    detailedSpecs: [
+      {
+        category: "Structure & Civil",
+        items: [
+          "Tata Tiscon Fe 550D / JSW NeoSteel TMT",
+          "Ultratech Super / Birla A1 Cement",
+          "Wire-cut Red Brick or 8-inch Solid Block Masonry",
+          "10.5 ft Ceiling Height with Acoustic Ceiling Plastering",
+        ],
+      },
+      {
+        category: "Flooring & Tiles",
+        items: [
+          "Living & Dining: 4x2 ft Glazed Vitrified Tiles (₹90/sq.ft allowance)",
+          "Master Suite: Wooden Laminate or Engineered Tile Accent",
+          "Bathrooms: Designer Vitrified Wall Tiles up to False Ceiling",
+          "Kitchen: Premium Quartz or Black Galaxy Granite with Franke Sink",
+        ],
+      },
+      {
+        category: "Doors & Windows",
+        items: [
+          "Main Door: Teakwood Frame (5x3 inch) with Carved Teak Shutter & Brass Lock",
+          "Internal Doors: Honne/Teak Frame with Laminated Flush Shutters",
+          "Windows: Premium 3-Track UPVC Windows with Mosquito Mesh (Fenesta/Kommerling)",
+        ],
+      },
+      {
+        category: "Plumbing & Electrical",
+        items: [
+          "Wall-hung EWC with Concealed Flush Cistern (Grohe/Kohler)",
+          "Single Lever Diverters & Overhead Rain Showers",
+          "Finolex / Havells Fire-Resistant Wires & Schneider Electric Switches",
+          "Provision for Solar Water Heater, UPS & EV Charging Port",
+        ],
+      },
+      {
+        category: "Painting & Warranty",
+        items: [
+          "Internal: Birla White Putty, Asian Paints Royale Luxury Emulsion",
+          "External: Asian Paints Apex Ultima with Silicone Base",
+          "10-Year Structural Integrity Warranty + 5-Year Anti-Termite & Waterproofing",
+        ],
+      },
+    ],
+  },
+  {
+    id: "diamond-luxury",
+    name: "Diamond Luxury",
+    price: "₹2,850 / sq.ft",
+    unit: "Bespoke Architectural Villa & Heritage Craft",
+    badge: "ROYAL LUXURY",
+    isPopular: false,
+    order: 3,
+    isActive: true,
+    description:
+      "Uncompromising royal luxury crafted with authentic Italian marble, bespoke solid teak joinery, German sanitary fittings, courtyard integration, and smart home automation.",
+    features: [
+      "Custom 3D Architectural Blueprinting & Sthapati Vastu Planning",
+      "Italian Marble or Genuine Teakwood Hardwood Flooring",
+      "Bespoke Handcrafted Pooja Sanctuary with Brass Inlays",
+      "Grohe / Toto Japanese Sanitaryware & Thermostatic Rain Showers",
+      "PU-Finish Modular Kitchen with Caesarstone Quartz Countertops",
+      "Complete Smart Home Lighting, Sensor Controls & Solar Conduits",
+      "Exposed Terracotta Jali, Courtyard Skylight & Verandah Details",
+      "15-Year Unconditional Structural & Waterproofing Guarantee",
+    ],
+    detailedSpecs: [
+      {
+        category: "Structure & Civil",
+        items: [
+          "Tata Tiscon Fe 550D TMT with Ultrasonic Non-Destructive Testing",
+          "Ready Mix Concrete (RMC) M25 Grade with Automated Curing",
+          "High-Density Clay Wire-Cut Bricks / Terracotta Architectural Blocks",
+          "11.5 ft Grand Ceiling Height with Double-Height Courtyard Provisions",
+        ],
+      },
+      {
+        category: "Flooring & Tiles",
+        items: [
+          "Living, Dining & Foyer: Imported Italian Marble / Botticino (₹350/sq.ft)",
+          "Master Suite: Solid Burma Teak or Engineered Hardwood",
+          "Pooja Room: Fluted Marble Panels with Brass Lotus Inlays",
+          "Bathrooms: Full-Body Italian Slab Cladding with Glass Enclosures",
+        ],
+      },
+      {
+        category: "Doors & Windows",
+        items: [
+          "Main Entrance: 8 ft Solid Burma Teak Frame with Smart Biometric Lock (Yale)",
+          "Internal Doors: 8 ft Flush Veneer Finished with Concealed Magnetic Hinges",
+          "Windows: Thermal-Break Double Glazed UPVC / Anodized Aluminum Systems",
+        ],
+      },
+      {
+        category: "Plumbing & Electrical",
+        items: [
+          "Toto Neorest / Grohe Smart Sensor Toilets & Thermostatic Mixers",
+          "Pressurized Water Ring Main System with Dual Pumps",
+          "Complete KNX / Legrand IoT Home Automation for Lighting & Curtains",
+          "Solar Rooftop 5kW Grid-Tied System Conduiting & High-Amp EV Point",
+        ],
+      },
+      {
+        category: "Painting & Warranty",
+        items: [
+          "Internal: PU Paint / Lime Plaster / Asian Paints Royale Aspira",
+          "External: Textured Stone Cladding, Exposed Brick Polish & Ultima Protek",
+          "15-Year Complete Structural Guarantee with Bi-Annual Site Health Checkups",
+        ],
+      },
+    ],
+  },
+];
+

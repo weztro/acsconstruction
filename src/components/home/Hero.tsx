@@ -1,10 +1,28 @@
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Compass, ShieldCheck, Sparkles } from "lucide-react";
 import { ArchitecturalImage } from "@/components/ui/architectural-image";
+import { DEFAULT_HERO_METRICS, type HeroMetricItem } from "@/lib/constants";
+import { fetchHeroMetricsFromFirestore } from "@/lib/firebase";
 
 export function Hero() {
+  const [metrics, setMetrics] = React.useState<HeroMetricItem[]>(DEFAULT_HERO_METRICS);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetchHeroMetricsFromFirestore().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setMetrics(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   return (
     <section className="relative overflow-hidden pt-20 pb-28 lg:pt-28 lg:pb-36 bg-background">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
@@ -72,22 +90,19 @@ export function Hero() {
               </Button>
             </div>
 
-            {/* Quotation Trust Indicator with Generous Breathing Room */}
-            <div className="pt-8 border-t border-border flex items-center gap-8 text-xs text-muted-foreground">
-              <div className="space-y-0.5">
-                <p className="font-serif text-base font-normal text-foreground">₹2,350 / sq.ft</p>
-                <p className="text-[11px]">Turnkey Construction Base</p>
-              </div>
-              <div className="h-8 w-[1px] bg-border" />
-              <div className="space-y-0.5">
-                <p className="font-serif text-base font-normal text-foreground">45-Point Audit</p>
-                <p className="text-[11px]">Quality Engineering Checks</p>
-              </div>
-              <div className="h-8 w-[1px] bg-border" />
-              <div className="space-y-0.5">
-                <p className="font-serif text-base font-normal text-foreground">Fixed Timeline</p>
-                <p className="text-[11px]">Milestone Guaranteed</p>
-              </div>
+            {/* Dynamic Quotation Trust Indicators with Generous Breathing Room */}
+            <div className="pt-8 border-t border-border flex flex-wrap items-center gap-6 sm:gap-8 text-xs text-muted-foreground">
+              {metrics.map((item, idx) => (
+                <React.Fragment key={item.id || idx}>
+                  {idx > 0 && <div className="h-8 w-[1px] bg-border hidden xs:block" />}
+                  <div className="space-y-0.5 min-w-[110px]">
+                    <p className="font-serif text-base font-normal text-foreground tracking-tight">
+                      {item.value}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{item.label}</p>
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
           </div>
 

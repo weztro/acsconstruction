@@ -1,5 +1,13 @@
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
-import { SERVICES } from "@/lib/constants";
+import { SERVICES, type ServiceItem } from "@/lib/constants";
+import {
+  fetchServicesFromFirestore,
+  fetchHiddenDefaults,
+  type DynamicService,
+} from "@/lib/firebase";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +19,12 @@ import {
   ShieldCheck,
   ArrowRight,
   Check,
+  Home,
+  Wrench,
+  Ruler,
+  Paintbrush,
+  HardHat,
+  Layers,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -20,9 +34,50 @@ const iconMap: Record<string, React.ElementType> = {
   Armchair,
   Sparkles,
   ShieldCheck,
+  Home,
+  Wrench,
+  Ruler,
+  Paintbrush,
+  HardHat,
+  Layers,
 };
 
 export function Services() {
+  const [services, setServices] = React.useState<ServiceItem[]>(SERVICES);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    async function loadServices() {
+      try {
+        const [firestoreServices, hiddenConfig] = await Promise.all([
+          fetchServicesFromFirestore(),
+          fetchHiddenDefaults(),
+        ]);
+
+        if (!isMounted) return;
+
+        const hiddenIds = new Set(hiddenConfig.hiddenServices || []);
+        const activeDefaults = SERVICES.filter((s) => !hiddenIds.has(s.id));
+        const merged = [...activeDefaults, ...firestoreServices].filter(
+          (s) => (s as DynamicService).isActive !== false
+        );
+
+        if (merged.length > 0) {
+          setServices(merged);
+        }
+      } catch (err) {
+        console.warn("Could not load dynamic services, using defaults:", err);
+      }
+    }
+
+    loadServices();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className="py-24 lg:py-36 bg-secondary/20 border-t border-border" id="services">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
@@ -30,7 +85,7 @@ export function Services() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 lg:mb-20 gap-8">
           <div className="space-y-3 max-w-2xl">
             <span className="text-xs font-semibold uppercase tracking-widest text-[#B86F55] dark:text-[#B8735B]">
-              Craft & Capabilities
+              Craft &amp; Capabilities
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-foreground">
               Comprehensive Residential Services.
@@ -45,14 +100,14 @@ export function Services() {
           </Button>
         </div>
 
-        {/* 6 Customized Architectural Cards */}
+        {/* Dynamic Architectural Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {SERVICES.map((service, index) => {
+          {services.map((service, index) => {
             const Icon = iconMap[service.iconName] || Compass;
 
             return (
               <Card
-                key={service.id}
+                key={service.id || index}
                 className="group flex flex-col justify-between border-border bg-card hover:border-primary/60 transition-all duration-300 rounded-md shadow-xs"
               >
                 <CardHeader className="space-y-4 p-7 sm:p-8">
@@ -61,7 +116,7 @@ export function Services() {
                       <Icon className="w-5 h-5" />
                     </div>
                     <span className="font-mono text-xs text-muted-foreground/60">
-                      0{index + 1}
+                      {String(index + 1).padStart(2, "0")}
                     </span>
                   </div>
 

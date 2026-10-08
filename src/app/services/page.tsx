@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { SERVICES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,31 +8,14 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import {
-  Compass,
-  Hammer,
-  KeyRound,
-  Armchair,
-  Sparkles,
-  ShieldCheck,
-  CheckCircle2,
-  ArrowRight,
-  HelpCircle,
-} from "lucide-react";
+import { HelpCircle } from "lucide-react";
+import { ServicesList } from "@/components/services/ServicesList";
+import { PackageCards } from "@/components/home/PackageCards";
 
 export const metadata: Metadata = {
   title: "Services & Capabilities",
   description:
     "End-to-end residential construction and architectural design services in India: turnkey villa execution, structural engineering, interior carpentry, and heritage renovation.",
-};
-
-const iconMap: Record<string, React.ElementType> = {
-  Compass,
-  Hammer,
-  KeyRound,
-  Armchair,
-  Sparkles,
-  ShieldCheck,
 };
 
 const FAQS = [
@@ -69,92 +51,24 @@ export default function ServicesPage() {
             Comprehensive Capabilities
           </Badge>
           <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-foreground">
-            Residential Construction & Design.
+            Residential Construction &amp; Design.
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground leading-[1.7]">
             Crafting homes for Indian families requires both artistic sensitivity and
-            uncompromising engineering rigor. Explore our six core specialized practices.
+            uncompromising engineering rigor. Explore our core specialized practices.
           </p>
         </div>
 
-        {/* 6 In-depth Service Sections */}
-        <div className="space-y-16 lg:space-y-20">
-          {SERVICES.map((service, index) => {
-            const Icon = iconMap[service.iconName] || Compass;
+        {/* Dynamic Services List */}
+        <ServicesList />
 
-            return (
-              <section
-                key={service.id}
-                id={service.id}
-                className="scroll-mt-28 p-7 sm:p-10 bg-card border border-border rounded-md shadow-xs"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-                  {/* Service Header Info */}
-                  <div className="lg:col-span-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-md bg-secondary/60 text-primary flex items-center justify-center">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="font-mono text-xs text-primary font-semibold">
-                          SERVICE 0{index + 1}
-                        </span>
-                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-foreground">
-                          {service.title}
-                        </h2>
-                      </div>
-                    </div>
-
-                    <p className="text-sm sm:text-base text-muted-foreground leading-[1.7]">
-                      {service.fullDesc}
-                    </p>
-
-                    <div className="pt-2">
-                      <Button asChild variant="default" size="sm" className="text-xs uppercase tracking-wider font-medium">
-                        <Link href="/contact" className="inline-flex items-center gap-2">
-                          <span>Request Service Proposal</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Features & Deliverables Column */}
-                  <div className="lg:col-span-6 bg-secondary/30 p-6 sm:p-7 rounded-md border border-border space-y-6">
-                    <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-3">
-                        Technical Standards & Methodologies
-                      </h3>
-                      <div className="space-y-2.5">
-                        {service.features.map((feat, i) => (
-                          <div key={i} className="flex items-start gap-2.5 text-xs text-muted-foreground">
-                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                            <span>{feat}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-border">
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-2.5">
-                        Deliverables Included
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5">
-                        {service.deliverables.map((del) => (
-                          <span
-                            key={del}
-                            className="text-xs bg-card text-foreground px-2.5 py-1 rounded-sm border border-border font-medium"
-                          >
-                            {del}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            );
-          })}
+        {/* Turnkey Construction Packages Section */}
+        <div className="mt-24 lg:mt-32">
+          <PackageCards
+            className="border-none py-0 lg:py-0"
+            title="Curated Turnkey Packages"
+            subtitle="Transparent per-sq.ft rates with itemized material specifications and fixed handover commitments."
+          />
         </div>
 
         {/* Construction FAQs using shadcn Accordion */}
@@ -162,7 +76,7 @@ export default function ServicesPage() {
           <div className="text-center space-y-2">
             <span className="text-xs font-semibold uppercase tracking-widest text-[#B86F55] dark:text-[#B8735B] flex items-center justify-center gap-1.5">
               <HelpCircle className="w-4 h-4" />
-              <span>Clarity & Answers</span>
+              <span>Clarity &amp; Answers</span>
             </span>
             <h2 className="font-serif text-2xl sm:text-3xl font-normal text-foreground">
               Frequently Asked Questions
@@ -192,8 +106,7 @@ export default function ServicesPage() {
             Have a specific architectural requirement?
           </h3>
           <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Our principal architect is available for in-person consultations in Bengaluru,
-            Hyderabad, Chennai, and Kochi.
+            Our principal architect is available for in-person consultations across Tamil Nadu and South India.
           </p>
           <div className="pt-2">
             <Button asChild variant="default" className="text-xs uppercase tracking-wider font-medium">

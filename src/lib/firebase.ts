@@ -688,15 +688,32 @@ export async function deleteTestimonialFromFirestore(id: string): Promise<boolea
 // Studio Settings: Defaults Visibility (Hidden Defaults)
 // ----------------------------------------------------
 
+import {
+  type DynamicPackage,
+  type HeroMetricItem,
+  type ServiceItem,
+  DEFAULT_HERO_METRICS,
+} from "@/lib/constants";
+
 export interface HiddenDefaultsConfig {
   hiddenStyles: string[];
   hiddenBudgets: string[];
   hiddenEngineers: string[];
   hiddenTestimonials?: string[];
+  hiddenServices?: string[];
+  hiddenPackages?: string[];
 }
 
 export async function fetchHiddenDefaults(): Promise<HiddenDefaultsConfig> {
-  if (!db) return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [], hiddenTestimonials: [] };
+  if (!db)
+    return {
+      hiddenStyles: [],
+      hiddenBudgets: [],
+      hiddenEngineers: [],
+      hiddenTestimonials: [],
+      hiddenServices: [],
+      hiddenPackages: [],
+    };
   try {
     const docRef = doc(db, "studio_settings", "hidden_defaults");
     const snap = await getDoc(docRef);
@@ -707,12 +724,28 @@ export async function fetchHiddenDefaults(): Promise<HiddenDefaultsConfig> {
         hiddenBudgets: Array.isArray(data.hiddenBudgets) ? data.hiddenBudgets : [],
         hiddenEngineers: Array.isArray(data.hiddenEngineers) ? data.hiddenEngineers : [],
         hiddenTestimonials: Array.isArray(data.hiddenTestimonials) ? data.hiddenTestimonials : [],
+        hiddenServices: Array.isArray(data.hiddenServices) ? data.hiddenServices : [],
+        hiddenPackages: Array.isArray(data.hiddenPackages) ? data.hiddenPackages : [],
       };
     }
-    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [], hiddenTestimonials: [] };
+    return {
+      hiddenStyles: [],
+      hiddenBudgets: [],
+      hiddenEngineers: [],
+      hiddenTestimonials: [],
+      hiddenServices: [],
+      hiddenPackages: [],
+    };
   } catch (e) {
     console.warn("Could not fetch hidden defaults:", e);
-    return { hiddenStyles: [], hiddenBudgets: [], hiddenEngineers: [], hiddenTestimonials: [] };
+    return {
+      hiddenStyles: [],
+      hiddenBudgets: [],
+      hiddenEngineers: [],
+      hiddenTestimonials: [],
+      hiddenServices: [],
+      hiddenPackages: [],
+    };
   }
 }
 
@@ -729,4 +762,176 @@ export async function saveHiddenDefaults(
     return false;
   }
 }
+
+// ----------------------------------------------------
+// Dynamic Turnkey Construction Packages / Plans
+// ----------------------------------------------------
+
+export async function fetchPackagesFromFirestore(): Promise<DynamicPackage[]> {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, "packages"), orderBy("order", "asc"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as DynamicPackage[];
+  } catch (error) {
+    console.error("Error fetching packages from Firestore:", error);
+    return [];
+  }
+}
+
+export async function savePackageToFirestore(
+  data: Omit<DynamicPackage, "id" | "createdAt" | "updatedAt">
+): Promise<{ success: boolean; id?: string }> {
+  if (!db) return { success: false };
+  try {
+    const docRef = await addDoc(collection(db, "packages"), {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error("Error saving package to Firestore:", error);
+    return { success: false };
+  }
+}
+
+export async function updatePackageInFirestore(
+  id: string,
+  data: Partial<Omit<DynamicPackage, "id" | "createdAt">>
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await updateDoc(doc(db, "packages", id), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating package:", error);
+    return false;
+  }
+}
+
+export async function deletePackageFromFirestore(id: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await deleteDoc(doc(db, "packages", id));
+    return true;
+  } catch (error) {
+    console.error("Error deleting package:", error);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// Dynamic Services
+// ----------------------------------------------------
+
+export interface DynamicService extends ServiceItem {
+  order?: number;
+  isActive?: boolean;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
+export async function fetchServicesFromFirestore(): Promise<DynamicService[]> {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, "services"), orderBy("createdAt", "asc"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    })) as DynamicService[];
+  } catch (error) {
+    console.error("Error fetching services from Firestore:", error);
+    return [];
+  }
+}
+
+export async function saveServiceToFirestore(
+  data: Omit<DynamicService, "id" | "createdAt" | "updatedAt">
+): Promise<{ success: boolean; id?: string }> {
+  if (!db) return { success: false };
+  try {
+    const docRef = await addDoc(collection(db, "services"), {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error("Error saving service to Firestore:", error);
+    return { success: false };
+  }
+}
+
+export async function updateServiceInFirestore(
+  id: string,
+  data: Partial<Omit<DynamicService, "id" | "createdAt">>
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await updateDoc(doc(db, "services", id), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating service:", error);
+    return false;
+  }
+}
+
+export async function deleteServiceInFirestore(id: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await deleteDoc(doc(db, "services", id));
+    return true;
+  } catch (error) {
+    console.error("Error deleting service:", error);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// Dynamic Hero Key Metrics (Trust Indicators)
+// ----------------------------------------------------
+
+export async function fetchHeroMetricsFromFirestore(): Promise<HeroMetricItem[]> {
+  if (!db) return DEFAULT_HERO_METRICS;
+  try {
+    const docRef = doc(db, "studio_settings", "hero_metrics");
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.metrics) && data.metrics.length > 0) {
+        return data.metrics as HeroMetricItem[];
+      }
+    }
+    return DEFAULT_HERO_METRICS;
+  } catch (e) {
+    console.warn("Could not fetch hero metrics from Firestore, using defaults:", e);
+    return DEFAULT_HERO_METRICS;
+  }
+}
+
+export async function saveHeroMetricsToFirestore(
+  metrics: HeroMetricItem[]
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const docRef = doc(db, "studio_settings", "hero_metrics");
+    await setDoc(docRef, { metrics, updatedAt: serverTimestamp() }, { merge: true });
+    return true;
+  } catch (e) {
+    console.error("Error saving hero metrics:", e);
+    return false;
+  }
+}
+
 
