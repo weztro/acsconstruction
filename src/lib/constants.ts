@@ -33,7 +33,7 @@ export const BRAND: BrandConfig = {
   whatsappNumber:
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ||
     process.env.WHATSAPP_NUMBER ||
-    "917708479504",
+    "6382995103",
   workingHours: "Monday – Saturday: 9:30 AM – 6:30 PM (IST)",
   socials: {
     instagram:

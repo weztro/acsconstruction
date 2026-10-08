@@ -314,7 +314,7 @@ export function PackagesManager() {
   return (
     <div className="space-y-8">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-card border border-border rounded-xl shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 bg-card border border-border rounded-xl shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B86F55] font-mono">
@@ -332,14 +332,14 @@ export function PackagesManager() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {hiddenDefaults.hiddenPackages && hiddenDefaults.hiddenPackages.length > 0 && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleRestoreDefaults}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-xs text-muted-foreground hover:text-foreground flex-1 sm:flex-none"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
               Reset Defaults
@@ -350,7 +350,7 @@ export function PackagesManager() {
             type="button"
             onClick={handleOpenAddModal}
             size="sm"
-            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs uppercase tracking-wider"
+            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs uppercase tracking-wider flex-1 sm:flex-none"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add New Package
@@ -383,7 +383,7 @@ export function PackagesManager() {
             return (
               <div
                 key={pkg.id || pkg.name}
-                className={`relative flex flex-col justify-between rounded-xl transition-all duration-200 bg-card p-6 border ${
+                className={`relative flex flex-col justify-between rounded-xl transition-all duration-200 bg-card p-4 sm:p-6 border ${
                   isPopular
                     ? "border-2 border-[#B86F55] shadow-md ring-1 ring-[#B86F55]/20"
                     : "border-border shadow-xs hover:border-primary/50"
@@ -448,7 +448,7 @@ export function PackagesManager() {
                 </div>
 
                 {/* Card Admin Actions */}
-                <div className="pt-6 mt-6 border-t border-border flex items-center justify-between gap-2">
+                <div className="pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-border flex flex-wrap items-center justify-between gap-2">
                   <Button
                     type="button"
                     variant={isPopular ? "default" : "outline"}
@@ -497,7 +497,7 @@ export function PackagesManager() {
 
       {/* CREATE / EDIT PACKAGE MODAL */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 sm:p-8">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl font-normal text-foreground">
               {editingPackageId ? `Edit Package: ${formName}` : "Create New Construction Package"}
@@ -622,7 +622,7 @@ export function PackagesManager() {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="outline"

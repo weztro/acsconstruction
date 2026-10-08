@@ -278,7 +278,7 @@ export function ServicesManager() {
   return (
     <div className="space-y-8">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-card border border-border rounded-xl shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 bg-card border border-border rounded-xl shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B86F55] font-mono">
@@ -296,14 +296,14 @@ export function ServicesManager() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {hiddenDefaults.hiddenServices && hiddenDefaults.hiddenServices.length > 0 && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleRestoreDefaults}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-xs text-muted-foreground hover:text-foreground flex-1 sm:flex-none"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
               Reset Defaults
@@ -314,7 +314,7 @@ export function ServicesManager() {
             type="button"
             onClick={handleOpenAddModal}
             size="sm"
-            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs uppercase tracking-wider"
+            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs uppercase tracking-wider flex-1 sm:flex-none"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add New Service
@@ -343,7 +343,7 @@ export function ServicesManager() {
             return (
               <div
                 key={service.id || idx}
-                className="flex flex-col justify-between rounded-xl bg-card border border-border p-6 shadow-xs hover:border-primary/50 transition-all duration-200"
+                className="flex flex-col justify-between rounded-xl bg-card border border-border p-4 sm:p-6 shadow-xs hover:border-primary/50 transition-all duration-200"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
@@ -423,7 +423,7 @@ export function ServicesManager() {
 
       {/* CREATE / EDIT SERVICE MODAL */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 sm:p-8">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl font-normal text-foreground">
               {editingServiceId ? `Edit Service: ${formTitle}` : "Create New Construction Service"}
@@ -516,7 +516,7 @@ export function ServicesManager() {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="outline"

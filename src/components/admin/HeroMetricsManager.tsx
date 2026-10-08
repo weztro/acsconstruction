@@ -109,7 +109,7 @@ export function HeroMetricsManager() {
   return (
     <div className="space-y-8">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-card border border-border rounded-xl shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 bg-card border border-border rounded-xl shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B86F55] font-mono">
@@ -127,13 +127,13 @@ export function HeroMetricsManager() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleResetDefaults}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-muted-foreground hover:text-foreground flex-1 sm:flex-none"
           >
             <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
             Reset Defaults
@@ -144,17 +144,17 @@ export function HeroMetricsManager() {
             onClick={handleSave}
             disabled={saving || loading}
             size="sm"
-            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs uppercase tracking-wider px-4"
+            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs uppercase tracking-wider px-4 flex-1 sm:flex-none"
           >
             <Save className="w-3.5 h-3.5 mr-1.5" />
-            {saving ? "Saving..." : "Save to Live Homepage"}
+            {saving ? "Saving..." : "Save to Live"}
           </Button>
         </div>
       </div>
 
       {/* LIVE PREVIEW BANNER (Replicates Image 2 Exactly) */}
-      <div className="p-6 sm:p-8 bg-card border border-border rounded-xl shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="p-4 sm:p-6 bg-card border border-border rounded-xl shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
             <Eye className="w-3.5 h-3.5 text-primary" />
             <span>Live Section Preview (How it appears in the Hero)</span>
@@ -164,11 +164,12 @@ export function HeroMetricsManager() {
           </span>
         </div>
 
-        <div className="p-6 bg-background rounded-lg border border-border/80">
-          <div className="flex flex-wrap items-center gap-8 text-xs text-muted-foreground">
+        <div className="p-4 sm:p-6 bg-background rounded-lg border border-border/80">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 text-xs text-muted-foreground">
             {metrics.map((item, idx) => (
               <React.Fragment key={item.id || idx}>
                 {idx > 0 && <div className="h-8 w-[1px] bg-border hidden sm:block" />}
+                {idx > 0 && <div className="w-full h-[1px] bg-border/60 sm:hidden" />}
                 <div className="space-y-0.5 min-w-[120px]">
                   <p className="font-serif text-base sm:text-lg font-normal text-foreground tracking-tight">
                     {item.value || "₹2,350 / sq.ft"}
@@ -184,8 +185,8 @@ export function HeroMetricsManager() {
       </div>
 
       {/* EDITORS FORM */}
-      <div className="p-6 sm:p-8 bg-card border border-border rounded-xl shadow-xs space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="p-4 sm:p-6 sm:p-8 bg-card border border-border rounded-xl shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h4 className="font-serif text-lg font-normal text-foreground">
             Configure Metrics ({metrics.length})
           </h4>
@@ -194,7 +195,7 @@ export function HeroMetricsManager() {
             variant="outline"
             size="sm"
             onClick={handleAddMetric}
-            className="text-xs"
+            className="text-xs w-full sm:w-auto"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add Indicator
@@ -252,12 +253,12 @@ export function HeroMetricsManager() {
           ))}
         </div>
 
-        <div className="flex items-center justify-end pt-4 border-t border-border">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end pt-4 border-t border-border">
           <Button
             type="button"
             onClick={handleSave}
             disabled={saving || loading}
-            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs font-medium px-6 h-10"
+            className="bg-[#B86F55] hover:bg-[#A35F48] text-white text-xs font-medium px-6 h-10 w-full sm:w-auto"
           >
             <Save className="w-3.5 h-3.5 mr-2" />
             {saving ? "Publishing to Live Site..." : "Save Changes"}

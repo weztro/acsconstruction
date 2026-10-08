@@ -1343,7 +1343,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-background">
       {/* Top Admin Header */}
       <div className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
               <span className="text-[10px] uppercase font-semibold tracking-widest text-[#B86F55] dark:text-[#B8735B]">
@@ -1360,9 +1360,9 @@ export default function AdminDashboardPage() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-              <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
+            <Button asChild variant="outline" size="sm" className="h-8 text-xs flex-1 sm:flex-none">
+              <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5">
                 <span>View Live Site</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
@@ -1371,7 +1371,7 @@ export default function AdminDashboardPage() {
               variant="ghost"
               size="sm"
               onClick={() => logout()}
-              className="h-8 text-xs text-muted-foreground hover:text-destructive"
+              className="h-8 text-xs text-muted-foreground hover:text-destructive flex-1 sm:flex-none justify-center"
             >
               <LogOut className="w-3.5 h-3.5 mr-1" />
               <span>Sign Out</span>
@@ -1379,72 +1379,74 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 flex gap-8 border-t border-border/50 text-xs font-medium">
-          <button
-            onClick={() => setActiveTab("leads")}
-            className={`py-3.5 flex items-center gap-2 border-b-2 transition-colors ${
-              activeTab === "leads"
-                ? "border-primary text-primary font-semibold"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Client Inquiries & Leads</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
-              {leads.length}
-            </span>
-          </button>
+        {/* Navigation Tabs (Mobile Responsive & Swipeable) */}
+        <div className="border-t border-border/50 overflow-x-auto scrollbar-none">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 flex gap-3 sm:gap-8 text-xs font-medium whitespace-nowrap min-w-max">
+            <button
+              onClick={() => setActiveTab("leads")}
+              className={`py-3 sm:py-3.5 flex items-center gap-1.5 sm:gap-2 border-b-2 transition-colors shrink-0 ${
+                activeTab === "leads"
+                  ? "border-primary text-primary font-semibold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Client Inquiries &amp; Leads</span>
+              <span className="ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
+                {leads.length}
+              </span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`py-3.5 flex items-center gap-2 border-b-2 transition-colors ${
-              activeTab === "projects"
-                ? "border-primary text-primary font-semibold"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <FolderKanban className="w-4 h-4" />
-            <span>Projects & Gallery</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
-              {projects.length}
-            </span>
-          </button>
+            <button
+              onClick={() => setActiveTab("projects")}
+              className={`py-3 sm:py-3.5 flex items-center gap-1.5 sm:gap-2 border-b-2 transition-colors shrink-0 ${
+                activeTab === "projects"
+                  ? "border-primary text-primary font-semibold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FolderKanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Projects &amp; Gallery</span>
+              <span className="ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
+                {projects.length}
+              </span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("visitors")}
-            className={`py-3.5 flex items-center gap-2 border-b-2 transition-colors ${
-              activeTab === "visitors"
-                ? "border-primary text-primary font-semibold"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Site Visitors</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
-              {visits.length}
-            </span>
-            <span className="relative flex h-2 w-2 ml-0.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-          </button>
+            <button
+              onClick={() => setActiveTab("visitors")}
+              className={`py-3 sm:py-3.5 flex items-center gap-1.5 sm:gap-2 border-b-2 transition-colors shrink-0 ${
+                activeTab === "visitors"
+                  ? "border-primary text-primary font-semibold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Site Visitors</span>
+              <span className="ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-foreground font-mono">
+                {visits.length}
+              </span>
+              <span className="relative flex h-2 w-2 ml-0.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("config")}
-            className={`py-3.5 flex items-center gap-2 border-b-2 transition-colors ${
-              activeTab === "config"
-                ? "border-primary text-primary font-semibold"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Settings className="w-4 h-4 text-[#B86F55]" />
-            <span>Studio Config (Styles, Budgets &amp; Mesthris)</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("config")}
+              className={`py-3 sm:py-3.5 flex items-center gap-1.5 sm:gap-2 border-b-2 transition-colors shrink-0 ${
+                activeTab === "config"
+                  ? "border-primary text-primary font-semibold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B86F55]" />
+              <span>Studio Dynamic Config</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-5 sm:py-8">
         {/* ==================================================== */}
         {/* LEADS TAB CONTENT */}
         {/* ==================================================== */}
@@ -1601,10 +1603,10 @@ export default function AdminDashboardPage() {
         {/* ==================================================== */}
         {activeTab === "projects" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="font-serif text-xl font-normal text-foreground">
-                  Architectural Portfolio & Projects
+                  Architectural Portfolio &amp; Projects
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   Add completed homes and villa projects to show on your website.
@@ -1613,7 +1615,7 @@ export default function AdminDashboardPage() {
 
               <Button
                 onClick={() => setIsAddModalOpen(true)}
-                className="text-xs tracking-wider uppercase font-medium flex items-center gap-1.5"
+                className="text-xs tracking-wider uppercase font-medium flex items-center justify-center gap-1.5 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Project</span>
@@ -2128,7 +2130,7 @@ export default function AdminDashboardPage() {
         {activeTab === "config" && (
           <div className="space-y-8">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-card border border-border rounded-xl shadow-xs">
+            <div className="p-4 sm:p-6 bg-card border border-border rounded-xl shadow-xs space-y-4">
               <div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B86F55] font-mono">
                   Master Data &amp; Dynamic Settings
@@ -2137,102 +2139,104 @@ export default function AdminDashboardPage() {
                   Studio Dynamic Configuration
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Configure architectural styles (project types), estimated budget ranges, and engineers/mesthri profiles. Stored in Firebase Firestore and reflected across the live frontend.
+                  Configure packages &amp; pricing, hero trust metrics, services, architectural styles, budget brackets, team, and homeowner reviews. Stored in Firebase Firestore and reflected across the live frontend.
                 </p>
               </div>
 
-              {/* Sub-Tabs Selector */}
-              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-secondary/60 border border-border rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setConfigSubTab("packages")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    configSubTab === "packages"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5 inline mr-1 text-[#B86F55]" />
-                  Packages &amp; Pricing (Image 1)
-                </button>
+              {/* Sub-Tabs Selector (Horizontally Swipeable on Mobile) */}
+              <div className="w-full overflow-x-auto scrollbar-none pb-1">
+                <div className="flex items-center gap-1.5 p-1 bg-secondary/60 border border-border rounded-lg w-max min-w-full">
+                  <button
+                    type="button"
+                    onClick={() => setConfigSubTab("packages")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                      configSubTab === "packages"
+                        ? "bg-card text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5 inline mr-1 text-[#B86F55]" />
+                    Packages &amp; Pricing
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setConfigSubTab("hero_metrics")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    configSubTab === "hero_metrics"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <TrendingUp className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
-                  Hero Trust Metrics (Image 2)
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigSubTab("hero_metrics")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                      configSubTab === "hero_metrics"
+                        ? "bg-card text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <TrendingUp className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
+                    Hero Trust Metrics
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setConfigSubTab("services")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    configSubTab === "services"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <HardHat className="w-3.5 h-3.5 inline mr-1 text-primary" />
-                  Services &amp; Practices
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigSubTab("services")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                      configSubTab === "services"
+                        ? "bg-card text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <HardHat className="w-3.5 h-3.5 inline mr-1 text-primary" />
+                    Services &amp; Practices
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setConfigSubTab("styles")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    configSubTab === "styles"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Palette className="w-3.5 h-3.5 inline mr-1 text-[#B86F55]" />
-                  Project Types ({dynamicProjectTypes.length + INDIAN_DESIGN_STYLES.length})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigSubTab("styles")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                      configSubTab === "styles"
+                        ? "bg-card text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Palette className="w-3.5 h-3.5 inline mr-1 text-[#B86F55]" />
+                    Project Types ({dynamicProjectTypes.length + INDIAN_DESIGN_STYLES.length})
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setConfigSubTab("budgets")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    configSubTab === "budgets"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <DollarSign className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
-                  Budgets ({dynamicBudgets.length + BUDGET_RANGES.length})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigSubTab("budgets")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                      configSubTab === "budgets"
+                        ? "bg-card text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <DollarSign className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
+                    Budgets ({dynamicBudgets.length + BUDGET_RANGES.length})
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setConfigSubTab("engineers")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    configSubTab === "engineers"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <HardHat className="w-3.5 h-3.5 inline mr-1 text-primary" />
-                  Engineers &amp; Mesthris ({dynamicEngineers.length + 3})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigSubTab("engineers")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                      configSubTab === "engineers"
+                        ? "bg-card text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <HardHat className="w-3.5 h-3.5 inline mr-1 text-primary" />
+                    Engineers &amp; Mesthris ({dynamicEngineers.length + 3})
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setConfigSubTab("testimonials")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    configSubTab === "testimonials"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <MessageSquareQuote className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
-                  What Families Say ({dynamicTestimonials.length + TESTIMONIALS.length})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigSubTab("testimonials")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                      configSubTab === "testimonials"
+                        ? "bg-card text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <MessageSquareQuote className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
+                    What Families Say ({dynamicTestimonials.length + TESTIMONIALS.length})
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2248,7 +2252,7 @@ export default function AdminDashboardPage() {
             {/* SUBTAB 1: PROJECT TYPES / ARCHITECTURAL STYLES */}
             {configSubTab === "styles" && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-serif text-lg font-normal text-foreground">
                       Architectural Styles &amp; Project Types
@@ -2260,7 +2264,7 @@ export default function AdminDashboardPage() {
                   <Button
                     onClick={() => setIsAddTypeModalOpen(true)}
                     size="sm"
-                    className="text-xs uppercase tracking-wider"
+                    className="text-xs uppercase tracking-wider w-full sm:w-auto"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
                     <span>Add Project Type</span>
@@ -2268,7 +2272,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {hiddenDefaults.hiddenStyles.length > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-secondary/50 border border-border rounded-lg text-xs">
                     <span className="text-muted-foreground">
                       {hiddenDefaults.hiddenStyles.length} default architectural style(s) currently hidden.
                     </span>
@@ -2276,7 +2280,7 @@ export default function AdminDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleRestoreDefaultStyles}
-                      className="text-xs h-7"
+                      className="text-xs h-7 w-full sm:w-auto"
                     >
                       <RotateCcw className="w-3 h-3 mr-1" />
                       Restore Default Styles
@@ -2472,7 +2476,7 @@ export default function AdminDashboardPage() {
                 </form>
 
                 {hiddenDefaults.hiddenBudgets.length > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-secondary/50 border border-border rounded-lg text-xs">
                     <span className="text-muted-foreground">
                       {hiddenDefaults.hiddenBudgets.length} default budget bracket(s) currently hidden.
                     </span>
@@ -2480,7 +2484,7 @@ export default function AdminDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleRestoreDefaultBudgets}
-                      className="text-xs h-7"
+                      className="text-xs h-7 w-full sm:w-auto"
                     >
                       <RotateCcw className="w-3 h-3 mr-1" />
                       Restore Default Budgets
@@ -2572,7 +2576,7 @@ export default function AdminDashboardPage() {
             {/* SUBTAB 3: ENGINEERS & MESTHRIS */}
             {configSubTab === "engineers" && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-serif text-lg font-normal text-foreground">
                       Site Engineers, Chief Mesthris &amp; Master Masons
@@ -2584,7 +2588,7 @@ export default function AdminDashboardPage() {
                   <Button
                     onClick={() => setIsAddEngModalOpen(true)}
                     size="sm"
-                    className="text-xs uppercase tracking-wider"
+                    className="text-xs uppercase tracking-wider w-full sm:w-auto"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
                     <span>Add Engineer / Mesthri</span>
@@ -2592,7 +2596,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {hiddenDefaults.hiddenEngineers.length > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-secondary/50 border border-border rounded-lg text-xs">
                     <span className="text-muted-foreground">
                       {hiddenDefaults.hiddenEngineers.length} default leadership profile(s) currently hidden.
                     </span>
@@ -2600,7 +2604,7 @@ export default function AdminDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleRestoreDefaultEngineers}
-                      className="text-xs h-7"
+                      className="text-xs h-7 w-full sm:w-auto"
                     >
                       <RotateCcw className="w-3 h-3 mr-1" />
                       Restore Default Leadership
@@ -2773,7 +2777,7 @@ export default function AdminDashboardPage() {
             {/* SUBTAB 4: CUSTOMER FEEDBACK & FAMILY TESTIMONIALS */}
             {configSubTab === "testimonials" && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-serif text-lg font-normal text-foreground">
                       Customer Feedback &amp; Reviews (&ldquo;What Families Say&rdquo;)
@@ -2785,7 +2789,7 @@ export default function AdminDashboardPage() {
                   <Button
                     onClick={() => setIsAddTestModalOpen(true)}
                     size="sm"
-                    className="text-xs uppercase tracking-wider"
+                    className="text-xs uppercase tracking-wider w-full sm:w-auto"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
                     <span>Add Review / Feedback</span>
@@ -2793,7 +2797,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {hiddenDefaults.hiddenTestimonials && hiddenDefaults.hiddenTestimonials.length > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-secondary/50 border border-border rounded-lg text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-secondary/50 border border-border rounded-lg text-xs">
                     <span className="text-muted-foreground">
                       {hiddenDefaults.hiddenTestimonials.length} default homeowner review(s) currently hidden from public view.
                     </span>
@@ -2801,7 +2805,7 @@ export default function AdminDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleRestoreDefaultTestimonials}
-                      className="text-xs h-7"
+                      className="text-xs h-7 w-full sm:w-auto"
                     >
                       <RotateCcw className="w-3 h-3 mr-1" />
                       Restore Default Reviews
@@ -2980,8 +2984,8 @@ export default function AdminDashboardPage() {
       {/* ADD PROJECT MODAL */}
       {/* ==================================================== */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
@@ -3161,7 +3165,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -3191,8 +3195,8 @@ export default function AdminDashboardPage() {
       {/* ADD PROJECT TYPE / ARCHITECTURAL STYLE MODAL */}
       {/* ==================================================== */}
       {isAddTypeModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
@@ -3331,7 +3335,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -3361,8 +3365,8 @@ export default function AdminDashboardPage() {
       {/* ADD ENGINEER / CHIEF MESTHRI MODAL */}
       {/* ==================================================== */}
       {isAddEngModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
@@ -3526,7 +3530,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -3556,8 +3560,8 @@ export default function AdminDashboardPage() {
       {/* EDIT PROJECT TYPE / ARCHITECTURAL STYLE MODAL */}
       {/* ==================================================== */}
       {isEditTypeModalOpen && editingType && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
@@ -3699,7 +3703,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -3732,8 +3736,8 @@ export default function AdminDashboardPage() {
       {/* EDIT BUDGET MODAL */}
       {/* ==================================================== */}
       {isEditBudgetModalOpen && editingBudget && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-md p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-md p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600 font-mono">
@@ -3770,7 +3774,7 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -3799,8 +3803,8 @@ export default function AdminDashboardPage() {
       {/* EDIT ENGINEER / CHIEF MESTHRI MODAL */}
       {/* ==================================================== */}
       {isEditEngModalOpen && editingEngineer && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
@@ -3967,7 +3971,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -4000,8 +4004,8 @@ export default function AdminDashboardPage() {
       {/* ADD CUSTOMER TESTIMONIAL MODAL */}
       {/* ==================================================== */}
       {isAddTestModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
@@ -4188,7 +4192,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -4218,8 +4222,8 @@ export default function AdminDashboardPage() {
       {/* EDIT CUSTOMER TESTIMONIAL MODAL */}
       {/* ==================================================== */}
       {isEditTestModalOpen && editingTestimonial && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-xl w-full max-w-xl p-4 sm:p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B86F55]">
@@ -4414,7 +4418,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
