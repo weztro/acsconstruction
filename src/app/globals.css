@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Explicit logo theme switching guaranteed to follow html.dark class */
+html.dark .logo-light {
+  display: none !important;
+}
+html.dark .logo-dark {
+  display: block !important;
+}
+html:not(.dark) .logo-light {
+  display: block !important;
+}
+html:not(.dark) .logo-dark {
+  display: none !important;
+}
+
 @layer base {
   :root {
     /* Exact Light Theme Palette */

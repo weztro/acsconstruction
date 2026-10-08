@@ -27,7 +27,7 @@ export function AcsMark({ className }: { className?: string }) {
         height={534}
         priority
         unoptimized
-        className="w-full h-full object-contain dark:hidden"
+        className="w-full h-full object-contain logo-light"
       />
       <Image
         src="/images/logo/acs-logo-dark.png"
@@ -36,7 +36,7 @@ export function AcsMark({ className }: { className?: string }) {
         height={534}
         priority
         unoptimized
-        className="w-full h-full object-contain hidden dark:block"
+        className="w-full h-full object-contain logo-dark"
       />
     </div>
   );
@@ -91,7 +91,7 @@ export function Logo({
           priority
           unoptimized
           className={cn(
-            "w-auto object-contain dark:hidden drop-shadow-xs transition-all duration-300",
+            "w-auto object-contain logo-light drop-shadow-xs transition-all duration-300",
             currentSize.mark,
             imageClassName
           )}
@@ -105,7 +105,7 @@ export function Logo({
           priority
           unoptimized
           className={cn(
-            "w-auto object-contain hidden dark:block drop-shadow-xs transition-all duration-300",
+            "w-auto object-contain logo-dark drop-shadow-xs transition-all duration-300",
             currentSize.mark,
             imageClassName
           )}
