@@ -176,15 +176,15 @@ export function ContactForm() {
           </p>
           <Button
             asChild
-            className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-medium text-xs h-10 shadow-xs uppercase tracking-wider"
+            className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-medium text-xs h-auto min-h-[42px] py-2.5 px-3 shadow-xs uppercase tracking-wider whitespace-normal text-center leading-snug"
           >
             <a
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2"
+              className="flex items-center justify-center gap-2 flex-wrap"
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-4 h-4 shrink-0" />
               <span>Chat on WhatsApp (+{BRAND.whatsappNumber})</span>
             </a>
           </Button>
@@ -220,7 +220,7 @@ export function ContactForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="p-8 sm:p-10 bg-card border border-border rounded-md shadow-xs space-y-6"
+      className="p-5 sm:p-8 md:p-10 bg-card border border-border rounded-md shadow-xs space-y-6"
       noValidate
     >
       <div className="space-y-1.5">
@@ -359,17 +359,17 @@ export function ContactForm() {
         type="submit"
         disabled={isSubmitting}
         variant="default"
-        className="w-full h-11 text-xs uppercase tracking-wider font-medium rounded-md"
+        className="w-full h-auto min-h-[46px] py-3 px-4 text-xs uppercase tracking-wider font-medium rounded-md whitespace-normal text-center leading-snug"
       >
         {isSubmitting ? (
-          <span className="flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Saving &amp; Opening WhatsApp...
+          <span className="flex items-center justify-center gap-2 flex-wrap text-center">
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            <span>Saving &amp; Opening WhatsApp...</span>
           </span>
         ) : (
-          <span className="flex items-center gap-2">
-            <Send className="w-3.5 h-3.5" />
-            Submit Request &amp; Connect via WhatsApp
+          <span className="flex items-center justify-center gap-2 flex-wrap text-center">
+            <Send className="w-3.5 h-3.5 shrink-0" />
+            <span>Submit Request &amp; Connect via WhatsApp</span>
           </span>
         )}
       </Button>

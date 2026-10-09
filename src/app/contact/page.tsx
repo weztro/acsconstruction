@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="py-20 lg:py-28 bg-background">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
         {/* Page Header */}
         <div className="text-center max-w-2xl mx-auto mb-16 lg:mb-20 space-y-3">
           <Badge variant="terracotta" className="tracking-widest uppercase text-[11px]">
@@ -29,10 +29,10 @@ export default function ContactPage() {
         </div>
 
         {/* Split Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-start">
           {/* Left Column: Direct Studio Contact & Information */}
           <div className="lg:col-span-5 space-y-8">
-            <div className="p-8 sm:p-9 bg-card border border-border rounded-md space-y-6 shadow-xs">
+            <div className="p-5 sm:p-8 md:p-9 bg-card border border-border rounded-md space-y-6 shadow-xs">
               <h2 className="font-serif text-2xl font-normal text-foreground">
                 Main Design Atelier
               </h2>

@@ -449,7 +449,7 @@ export function PackageCards({
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full sm:w-auto bg-[#B86F55] hover:bg-[#A35F48] dark:bg-[#B8735B] dark:hover:bg-[#A8644E] text-white text-xs font-semibold px-6 h-10"
+                      className="w-full sm:w-auto bg-[#B86F55] hover:bg-[#A35F48] dark:bg-[#B8735B] dark:hover:bg-[#A8644E] text-white text-xs font-semibold px-6 h-auto min-h-[40px] py-2.5 whitespace-normal text-center leading-snug"
                     >
                       {isSubmitting ? "Submitting..." : `Confirm Inquiry for ${selectedPackage.name}`}
                     </Button>
